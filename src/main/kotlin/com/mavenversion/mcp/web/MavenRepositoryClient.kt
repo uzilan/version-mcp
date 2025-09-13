@@ -2,6 +2,7 @@ package com.mavenversion.mcp.web
 
 import com.mavenversion.mcp.client.PlaywrightMCPClient
 import com.mavenversion.mcp.client.PlaywrightMCPException
+import com.mavenversion.mcp.models.SearchResult
 import kotlinx.coroutines.delay
 import mu.KotlinLogging
 import kotlin.math.min
@@ -14,6 +15,7 @@ private val log = KotlinLogging.logger {}
  */
 class MavenRepositoryClient(
     private val playwrightClient: PlaywrightMCPClient = PlaywrightMCPClient(),
+    private val searchResultParser: SearchResultParser = SearchResultParser(),
     private val baseUrl: String = "https://mvnrepository.com",
     private val maxRetries: Int = 3,
     private val baseDelayMs: Long = 1000,
@@ -40,9 +42,31 @@ class MavenRepositoryClient(
         }
 
     /**
-     * Search for dependencies on mvnrepository.com
+     * Search for dependencies on mvnrepository.com and return parsed results
      */
-    suspend fun searchDependencies(query: String): Result<String> =
+    suspend fun searchDependencies(query: String): Result<SearchResult> =
+        runCatching {
+            log.debug { "Searching for dependencies with query: $query" }
+            
+            if (query.isBlank()) {
+                log.warn { "Empty search query provided" }
+                return@runCatching SearchResult(
+                    dependencies = emptyList(),
+                    totalResults = 0,
+                    query = query
+                )
+            }
+
+            val html = searchDependenciesRaw(query).getOrThrow()
+            searchResultParser.parseSearchResults(html, query)
+        }.onFailure { error ->
+            log.error(error) { "Failed to search dependencies for query: $query" }
+        }
+
+    /**
+     * Search for dependencies on mvnrepository.com and return raw HTML
+     */
+    suspend fun searchDependenciesRaw(query: String): Result<String> =
         executeWithRetry("search dependencies") {
             log.debug { "Searching for dependencies with query: $query" }
 
@@ -58,8 +82,19 @@ class MavenRepositoryClient(
             // Submit search (either click search button or press enter)
             playwrightClient.clickElement("input[type='submit']").getOrThrow()
 
-            // Wait for results to load
-            playwrightClient.waitForElement(".im", 10000).getOrThrow()
+            // Wait for results to load - check for either results or no results message
+            try {
+                playwrightClient.waitForElement(".im", 10000).getOrThrow()
+            } catch (e: PlaywrightMCPException) {
+                // Check if it's a "no results" page instead of a timeout
+                val content = playwrightClient.getPageContent().getOrThrow()
+                if (content.contains("No results found", ignoreCase = true) || 
+                    content.contains("0 results", ignoreCase = true)) {
+                    log.info { "No search results found for query: $query" }
+                    return@executeWithRetry content
+                }
+                throw e
+            }
 
             // Get the page content with search results
             playwrightClient.getPageContent().getOrThrow()

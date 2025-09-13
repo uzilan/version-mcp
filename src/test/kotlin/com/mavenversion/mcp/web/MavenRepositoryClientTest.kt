@@ -2,6 +2,8 @@ package com.mavenversion.mcp.web
 
 import com.mavenversion.mcp.client.PlaywrightMCPClient
 import com.mavenversion.mcp.client.PlaywrightMCPException
+import com.mavenversion.mcp.models.Dependency
+import com.mavenversion.mcp.models.SearchResult
 import io.mockk.Runs
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
@@ -112,11 +114,37 @@ class MavenRepositoryClientTest {
     @DisplayName("Search Tests")
     inner class SearchTests {
         @Test
-        @DisplayName("Should search dependencies successfully")
-        fun shouldSearchDependenciesSuccessfully() =
+        @DisplayName("Should search dependencies and return parsed results")
+        fun shouldSearchDependenciesAndReturnParsedResults() =
             runTest {
                 val query = "spring-boot"
-                val expectedContent = "<html>Search results</html>"
+                val mockSearchResultParser = mockk<SearchResultParser>()
+                val clientWithMockParser = MavenRepositoryClient(
+                    playwrightClient = mockPlaywrightClient,
+                    searchResultParser = mockSearchResultParser,
+                    maxRetries = 2,
+                    baseDelayMs = 100
+                )
+                
+                val htmlContent = """
+                    <div class="im">
+                        <a href="/artifact/org.springframework.boot/spring-boot-starter">Spring Boot Starter</a>
+                        <p>Core starter for Spring Boot applications</p>
+                    </div>
+                """.trimIndent()
+                
+                val expectedSearchResult = SearchResult(
+                    dependencies = listOf(
+                        Dependency(
+                            groupId = "org.springframework.boot",
+                            artifactId = "spring-boot-starter",
+                            description = "Core starter for Spring Boot applications",
+                            url = "https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter"
+                        )
+                    ),
+                    totalResults = 1,
+                    query = query
+                )
 
                 coEvery { mockPlaywrightClient.navigateToUrl("https://mvnrepository.com") } returns
                     Result.success("<html>Homepage</html>")
@@ -124,16 +152,37 @@ class MavenRepositoryClientTest {
                 coEvery { mockPlaywrightClient.fillField("input[name='q']", query) } returns Result.success(Unit)
                 coEvery { mockPlaywrightClient.clickElement("input[type='submit']") } returns Result.success(Unit)
                 coEvery { mockPlaywrightClient.waitForElement(".im", 10000) } returns Result.success(Unit)
-                coEvery { mockPlaywrightClient.getPageContent() } returns Result.success(expectedContent)
+                coEvery { mockPlaywrightClient.getPageContent() } returns Result.success(htmlContent)
+                every { mockSearchResultParser.parseSearchResults(htmlContent, query) } returns expectedSearchResult
 
-                val result = mavenRepositoryClient.searchDependencies(query)
+                val result = clientWithMockParser.searchDependencies(query)
 
                 assertThat(result.isSuccess).isTrue()
-                assertThat(result.getOrNull()).isEqualTo(expectedContent)
+                val searchResult = result.getOrNull()
+                assertThat(searchResult).isNotNull()
+                assertThat(searchResult!!.query).isEqualTo(query)
+                assertThat(searchResult.dependencies).hasSize(1)
+                assertThat(searchResult.dependencies[0].groupId).isEqualTo("org.springframework.boot")
+                assertThat(searchResult.dependencies[0].artifactId).isEqualTo("spring-boot-starter")
 
                 coVerify { mockPlaywrightClient.navigateToUrl("https://mvnrepository.com") }
                 coVerify { mockPlaywrightClient.fillField("input[name='q']", query) }
                 coVerify { mockPlaywrightClient.clickElement("input[type='submit']") }
+                verify { mockSearchResultParser.parseSearchResults(htmlContent, query) }
+            }
+
+        @Test
+        @DisplayName("Should handle empty search query")
+        fun shouldHandleEmptySearchQuery() =
+            runTest {
+                val result = mavenRepositoryClient.searchDependencies("")
+
+                assertThat(result.isSuccess).isTrue()
+                val searchResult = result.getOrNull()
+                assertThat(searchResult).isNotNull()
+                assertThat(searchResult!!.dependencies).isEmpty()
+                assertThat(searchResult.totalResults).isEqualTo(0)
+                assertThat(searchResult.query).isEmpty()
             }
 
         @Test
@@ -148,6 +197,55 @@ class MavenRepositoryClientTest {
                 val result = mavenRepositoryClient.searchDependencies(query)
 
                 assertThat(result.isFailure).isTrue()
+            }
+
+        @Test
+        @DisplayName("Should handle no search results gracefully")
+        fun shouldHandleNoSearchResultsGracefully() =
+            runTest {
+                val query = "nonexistent-dependency"
+                val noResultsHtml = "<html><body>No results found</body></html>"
+
+                coEvery { mockPlaywrightClient.navigateToUrl("https://mvnrepository.com") } returns
+                    Result.success("<html>Homepage</html>")
+                coEvery { mockPlaywrightClient.waitForElement("input[name='q']", 5000) } returns Result.success(Unit)
+                coEvery { mockPlaywrightClient.fillField("input[name='q']", query) } returns Result.success(Unit)
+                coEvery { mockPlaywrightClient.clickElement("input[type='submit']") } returns Result.success(Unit)
+                coEvery { mockPlaywrightClient.waitForElement(".im", 10000) } throws PlaywrightMCPException("Element not found")
+                coEvery { mockPlaywrightClient.getPageContent() } returns Result.success(noResultsHtml)
+
+                val result = mavenRepositoryClient.searchDependencies(query)
+
+                assertThat(result.isSuccess).isTrue()
+                val searchResult = result.getOrNull()
+                assertThat(searchResult).isNotNull()
+                assertThat(searchResult!!.dependencies).isEmpty()
+                assertThat(searchResult.query).isEqualTo(query)
+            }
+
+        @Test
+        @DisplayName("Should search dependencies raw HTML successfully")
+        fun shouldSearchDependenciesRawHtmlSuccessfully() =
+            runTest {
+                val query = "spring-boot"
+                val expectedContent = "<html>Search results</html>"
+
+                coEvery { mockPlaywrightClient.navigateToUrl("https://mvnrepository.com") } returns
+                    Result.success("<html>Homepage</html>")
+                coEvery { mockPlaywrightClient.waitForElement("input[name='q']", 5000) } returns Result.success(Unit)
+                coEvery { mockPlaywrightClient.fillField("input[name='q']", query) } returns Result.success(Unit)
+                coEvery { mockPlaywrightClient.clickElement("input[type='submit']") } returns Result.success(Unit)
+                coEvery { mockPlaywrightClient.waitForElement(".im", 10000) } returns Result.success(Unit)
+                coEvery { mockPlaywrightClient.getPageContent() } returns Result.success(expectedContent)
+
+                val result = mavenRepositoryClient.searchDependenciesRaw(query)
+
+                assertThat(result.isSuccess).isTrue()
+                assertThat(result.getOrNull()).isEqualTo(expectedContent)
+
+                coVerify { mockPlaywrightClient.navigateToUrl("https://mvnrepository.com") }
+                coVerify { mockPlaywrightClient.fillField("input[name='q']", query) }
+                coVerify { mockPlaywrightClient.clickElement("input[type='submit']") }
             }
     }
 
