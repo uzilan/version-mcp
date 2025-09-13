@@ -53,5 +53,13 @@ class MyClass {
 ```
 
 ## Development Workflow
+- **Run build before committing** - Always run `./gradlew assemble` to ensure code compiles successfully before committing changes
 - **Commit after each task completion** - Always commit changes to version control after successfully completing each task from the implementation plan
 - This ensures incremental progress is saved and provides clear checkpoints for rollback if needed
+- If ktlint issues prevent build completion, use `./gradlew assemble -x ktlintCheck -x ktlintMainSourceSetCheck -x ktlintTestSourceSetCheck -x ktlintKotlinScriptCheck -x runKtlintCheckOverMainSourceSet -x runKtlintCheckOverTestSourceSet` to verify compilation
+
+## Build and Quality Checks
+- **Primary build command**: `./gradlew build` - Runs compilation, tests, and code quality checks
+- **Compilation only**: `./gradlew assemble` - Verifies code compiles without running tests
+- **Code formatting**: `./gradlew ktlintFormat` - Auto-formats code according to Kotlin style guide
+- **Skip ktlint when needed**: Add `-x ktlintCheck -x ktlintMainSourceSetCheck -x ktlintTestSourceSetCheck -x ktlintKotlinScriptCheck -x runKtlintCheckOverMainSourceSet -x runKtlintCheckOverTestSourceSet` to bypass formatting checks during development

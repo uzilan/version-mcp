@@ -7,17 +7,16 @@ import org.junit.jupiter.api.Test
 
 @DisplayName("SearchResultParser Tests")
 class SearchResultParserTest {
-
     private val parser = SearchResultParser()
 
     @Nested
     @DisplayName("Parse Search Results")
     inner class ParseSearchResultsTests {
-
         @Test
         @DisplayName("Should parse valid search results with multiple dependencies")
         fun shouldParseValidSearchResults() {
-            val html = """
+            val html =
+                """
                 <html>
                 <body>
                     <div class="im">
@@ -31,7 +30,7 @@ class SearchResultParserTest {
                     <div>Showing 1 to 2 of 1,234 results</div>
                 </body>
                 </html>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = parser.parseSearchResults(html, "spring")
 
@@ -54,13 +53,14 @@ class SearchResultParserTest {
         @Test
         @DisplayName("Should handle empty search results")
         fun shouldHandleEmptySearchResults() {
-            val html = """
+            val html =
+                """
                 <html>
                 <body>
                     <div>No results found for your search.</div>
                 </body>
                 </html>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = parser.parseSearchResults(html, "nonexistent")
 
@@ -72,7 +72,8 @@ class SearchResultParserTest {
         @Test
         @DisplayName("Should handle malformed HTML gracefully")
         fun shouldHandleMalformedHtml() {
-            val html = """
+            val html =
+                """
                 <html>
                 <body>
                     <div class="im">
@@ -83,7 +84,7 @@ class SearchResultParserTest {
                     </div>
                 </body>
                 </html>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = parser.parseSearchResults(html, "test")
 
@@ -96,7 +97,8 @@ class SearchResultParserTest {
         @Test
         @DisplayName("Should parse dependencies without descriptions")
         fun shouldParseDependenciesWithoutDescriptions() {
-            val html = """
+            val html =
+                """
                 <html>
                 <body>
                     <div class="im">
@@ -104,7 +106,7 @@ class SearchResultParserTest {
                     </div>
                 </body>
                 </html>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = parser.parseSearchResults(html, "test")
 
@@ -119,7 +121,8 @@ class SearchResultParserTest {
         @Test
         @DisplayName("Should handle complex artifact paths")
         fun shouldHandleComplexArtifactPaths() {
-            val html = """
+            val html =
+                """
                 <html>
                 <body>
                     <div class="im">
@@ -128,7 +131,7 @@ class SearchResultParserTest {
                     </div>
                 </body>
                 </html>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = parser.parseSearchResults(html, "spring boot")
 
@@ -142,15 +145,17 @@ class SearchResultParserTest {
         @Test
         @DisplayName("Should extract total results from various formats")
         fun shouldExtractTotalResultsFromVariousFormats() {
-            val testCases = listOf(
-                "Showing 1 to 20 of 1,234 results" to 1234,
-                "Found 567 results" to 567,
-                "89 results found" to 89,
-                "of 12,345 results" to 12345
-            )
+            val testCases =
+                listOf(
+                    "Showing 1 to 20 of 1,234 results" to 1234,
+                    "Found 567 results" to 567,
+                    "89 results found" to 89,
+                    "of 12,345 results" to 12345,
+                )
 
             testCases.forEach { (htmlText, expectedTotal) ->
-                val html = """
+                val html =
+                    """
                     <html>
                     <body>
                         <div>$htmlText</div>
@@ -159,7 +164,7 @@ class SearchResultParserTest {
                         </div>
                     </body>
                     </html>
-                """.trimIndent()
+                    """.trimIndent()
 
                 val result = parser.parseSearchResults(html, "test")
                 assertThat(result.totalResults).isEqualTo(expectedTotal)
@@ -169,7 +174,8 @@ class SearchResultParserTest {
         @Test
         @DisplayName("Should clean HTML entities in descriptions")
         fun shouldCleanHtmlEntitiesInDescriptions() {
-            val html = """
+            val html =
+                """
                 <html>
                 <body>
                     <div class="im">
@@ -178,7 +184,7 @@ class SearchResultParserTest {
                     </div>
                 </body>
                 </html>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = parser.parseSearchResults(html, "test")
 
@@ -212,11 +218,11 @@ class SearchResultParserTest {
     @Nested
     @DisplayName("Edge Cases")
     inner class EdgeCaseTests {
-
         @Test
         @DisplayName("Should handle artifacts with single-part paths")
         fun shouldHandleArtifactsWithSinglePartPaths() {
-            val html = """
+            val html =
+                """
                 <html>
                 <body>
                     <div class="im">
@@ -227,7 +233,7 @@ class SearchResultParserTest {
                     </div>
                 </body>
                 </html>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = parser.parseSearchResults(html, "test")
 
@@ -241,7 +247,8 @@ class SearchResultParserTest {
         @DisplayName("Should handle very long descriptions")
         fun shouldHandleVeryLongDescriptions() {
             val longDescription = "A".repeat(1000)
-            val html = """
+            val html =
+                """
                 <html>
                 <body>
                     <div class="im">
@@ -250,7 +257,7 @@ class SearchResultParserTest {
                     </div>
                 </body>
                 </html>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = parser.parseSearchResults(html, "test")
 
@@ -261,7 +268,8 @@ class SearchResultParserTest {
         @Test
         @DisplayName("Should handle mixed valid and invalid results")
         fun shouldHandleMixedValidAndInvalidResults() {
-            val html = """
+            val html =
+                """
                 <html>
                 <body>
                     <div class="im">
@@ -278,7 +286,7 @@ class SearchResultParserTest {
                     </div>
                 </body>
                 </html>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = parser.parseSearchResults(html, "test")
 

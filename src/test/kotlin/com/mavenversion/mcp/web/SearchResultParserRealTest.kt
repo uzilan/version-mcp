@@ -6,13 +6,13 @@ import org.junit.jupiter.api.Test
 
 @DisplayName("SearchResultParser Real HTML Tests")
 class SearchResultParserRealTest {
-
     private val parser = SearchResultParser()
 
     @Test
     @DisplayName("Should parse realistic mvnrepository.com HTML structure")
     fun shouldParseRealisticHtml() {
-        val realHtml = """
+        val realHtml =
+            """
             <div class="search-results">
                 <div class="search-header">
                     <h2>Search Results</h2>
@@ -47,7 +47,7 @@ class SearchResultParserRealTest {
                     </div>
                 </div>
             </div>
-        """.trimIndent()
+            """.trimIndent()
 
         val result = parser.parseSearchResults(realHtml, "spring-boot")
 
@@ -70,12 +70,13 @@ class SearchResultParserRealTest {
     @Test
     @DisplayName("Should handle minimal HTML structure")
     fun shouldHandleMinimalHtml() {
-        val minimalHtml = """
+        val minimalHtml =
+            """
             <div class="im">
                 <a href="/artifact/junit/junit">JUnit</a>
                 <p>JUnit is a unit testing framework for Java</p>
             </div>
-        """.trimIndent()
+            """.trimIndent()
 
         val result = parser.parseSearchResults(minimalHtml, "junit")
 
@@ -89,14 +90,15 @@ class SearchResultParserRealTest {
     @Test
     @DisplayName("Should extract result count from realistic patterns")
     fun shouldExtractResultCountFromRealisticPatterns() {
-        val htmlWithCount = """
+        val htmlWithCount =
+            """
             <div class="search-header">
                 <p>Showing 1 to 20 of 1,234 results</p>
             </div>
             <div class="im">
                 <a href="/artifact/test/test">Test</a>
             </div>
-        """.trimIndent()
+            """.trimIndent()
 
         val result = parser.parseSearchResults(htmlWithCount, "test")
 

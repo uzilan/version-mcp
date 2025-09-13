@@ -27,9 +27,10 @@ class ReliabilityService(
      */
     suspend fun <T> executeWithRetry(
         operation: String,
-        retryableExceptions: Set<Class<out Exception>> = setOf(
-            Exception::class.java
-        ),
+        retryableExceptions: Set<Class<out Exception>> =
+            setOf(
+                Exception::class.java,
+            ),
         block: suspend () -> T,
     ): Result<T> =
         runCatching {
@@ -39,20 +40,21 @@ class ReliabilityService(
                 try {
                     // Apply rate limiting before each attempt
                     applyRateLimit()
-                    
+
                     return@runCatching block()
                 } catch (e: Exception) {
                     lastException = e
-                    
+
                     // Check if this exception type should be retried
-                    val shouldRetry = retryableExceptions.any { it.isAssignableFrom(e::class.java) } ||
-                                    isRetryableException(e)
-                    
+                    val shouldRetry =
+                        retryableExceptions.any { it.isAssignableFrom(e::class.java) } ||
+                            isRetryableException(e)
+
                     if (!shouldRetry) {
                         log.warn { "Non-retryable exception for $operation: ${e.message}" }
                         throw e
                     }
-                    
+
                     log.warn { "Attempt ${attempt + 1} failed for $operation: ${e.message}" }
 
                     if (attempt < maxRetries - 1) {
@@ -76,12 +78,12 @@ class ReliabilityService(
         if (rateLimitDelayMs <= 0) {
             return
         }
-        
+
         val currentTime = System.currentTimeMillis()
-        
+
         // Clean old requests (older than 1 minute)
         requestHistory.removeAll { it < currentTime - 60000 }
-        
+
         // Check if we're hitting rate limits
         if (requestHistory.size >= maxRequestsPerMinute) {
             val oldestRequest = requestHistory.minOrNull() ?: currentTime
@@ -91,7 +93,7 @@ class ReliabilityService(
                 delay(waitTime)
             }
         }
-        
+
         // Ensure minimum delay between requests
         val timeSinceLastRequest = currentTime - lastRequestTime
         if (timeSinceLastRequest < rateLimitDelayMs) {
@@ -99,7 +101,7 @@ class ReliabilityService(
             log.debug { "Applying rate limit delay: ${delayNeeded}ms" }
             delay(delayNeeded)
         }
-        
+
         // Record this request
         lastRequestTime = System.currentTimeMillis()
         requestHistory.add(lastRequestTime)
@@ -119,29 +121,29 @@ class ReliabilityService(
      */
     fun isRetryableException(exception: Exception): Boolean {
         val message = exception.message?.lowercase() ?: ""
-        
+
         return when {
             // Network-related errors
             message.contains("timeout") -> true
             message.contains("connection") -> true
             message.contains("network") -> true
             message.contains("socket") -> true
-            
+
             // HTTP errors that might be temporary
             message.contains("502") -> true // Bad Gateway
             message.contains("503") -> true // Service Unavailable
             message.contains("504") -> true // Gateway Timeout
             message.contains("429") -> true // Too Many Requests
-            
+
             // Playwright-specific errors that might be temporary
             message.contains("page crashed") -> true
             message.contains("browser disconnected") -> true
             message.contains("navigation timeout") -> true
-            
+
             // Website structure changes (might be temporary)
             message.contains("element not found") -> true
             message.contains("selector not found") -> true
-            
+
             else -> false
         }
     }
@@ -152,16 +154,16 @@ class ReliabilityService(
     fun handleStructureChangeError(
         operation: String,
         selector: String,
-        exception: Exception
+        exception: Exception,
     ): Result<String> {
         log.warn { "Possible website structure change detected in $operation for selector '$selector': ${exception.message}" }
-        
+
         return Result.failure(
             WebsiteStructureException(
                 "Website structure may have changed. Selector '$selector' not found during $operation. " +
-                "This might be a temporary issue or the website layout may have been updated.",
-                exception
-            )
+                    "This might be a temporary issue or the website layout may have been updated.",
+                exception,
+            ),
         )
     }
 
@@ -170,7 +172,7 @@ class ReliabilityService(
      */
     fun createCircuitBreaker(
         failureThreshold: Int = 5,
-        recoveryTimeMs: Long = 60000
+        recoveryTimeMs: Long = 60000,
     ): CircuitBreaker {
         return CircuitBreaker(failureThreshold, recoveryTimeMs)
     }
@@ -181,7 +183,7 @@ class ReliabilityService(
  */
 class CircuitBreaker(
     private val failureThreshold: Int,
-    private val recoveryTimeMs: Long
+    private val recoveryTimeMs: Long,
 ) {
     private var failureCount = 0
     private var lastFailureTime = 0L
@@ -229,7 +231,7 @@ class CircuitBreaker(
     private fun onFailure() {
         failureCount++
         lastFailureTime = System.currentTimeMillis()
-        
+
         if (failureCount >= failureThreshold) {
             state = State.OPEN
             log.warn { "Circuit breaker opened due to $failureCount failures" }

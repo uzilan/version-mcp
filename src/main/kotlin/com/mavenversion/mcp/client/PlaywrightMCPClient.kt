@@ -214,5 +214,3 @@ class PlaywrightMCPClient(
      */
     fun isConnected(): Boolean = mcpClient.isConnected()
 }
-
-

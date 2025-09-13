@@ -1,33 +1,32 @@
 package com.mavenversion.mcp.models
 
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
-import org.junit.jupiter.api.Test
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
-import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for data models including serialization and validation
  */
 class DataModelsTest {
-
     private val json = Json { prettyPrint = true }
 
     @Nested
     @DisplayName("Dependency Tests")
     inner class DependencyTests {
-
         @Test
         @DisplayName("Should serialize and deserialize dependency with all fields")
         fun testDependencySerialization() {
-            val dependency = Dependency(
-                groupId = "org.springframework",
-                artifactId = "spring-core",
-                description = "Spring Core Framework",
-                url = "https://spring.io"
-            )
+            val dependency =
+                Dependency(
+                    groupId = "org.springframework",
+                    artifactId = "spring-core",
+                    description = "Spring Core Framework",
+                    url = "https://spring.io",
+                )
 
             val jsonString = json.encodeToString(dependency)
             val deserializedDependency = json.decodeFromString<Dependency>(jsonString)
@@ -42,10 +41,11 @@ class DataModelsTest {
         @Test
         @DisplayName("Should handle null optional fields correctly")
         fun testDependencyWithNullValues() {
-            val dependency = Dependency(
-                groupId = "com.example",
-                artifactId = "test-lib"
-            )
+            val dependency =
+                Dependency(
+                    groupId = "com.example",
+                    artifactId = "test-lib",
+                )
 
             val jsonString = json.encodeToString(dependency)
             val deserializedDependency = json.decodeFromString<Dependency>(jsonString)
@@ -61,17 +61,17 @@ class DataModelsTest {
     @Nested
     @DisplayName("Version Tests")
     inner class VersionTests {
-
         @Test
         @DisplayName("Should serialize and deserialize version with all fields")
         fun testVersionSerialization() {
-            val version = Version(
-                version = "1.2.3",
-                releaseDate = "2023-12-01",
-                isLatest = true,
-                downloads = 1000000L,
-                vulnerabilities = 0
-            )
+            val version =
+                Version(
+                    version = "1.2.3",
+                    releaseDate = "2023-12-01",
+                    isLatest = true,
+                    downloads = 1000000L,
+                    vulnerabilities = 0,
+                )
 
             val jsonString = json.encodeToString(version)
             val deserializedVersion = json.decodeFromString<Version>(jsonString)
@@ -172,18 +172,18 @@ class DataModelsTest {
     @Nested
     @DisplayName("UpdateResult Tests")
     inner class UpdateResultTests {
-
         @Test
         @DisplayName("Should serialize and deserialize update result with all fields")
         fun testUpdateResultSerialization() {
-            val updateResult = UpdateResult(
-                success = true,
-                message = "Dependency updated successfully",
-                filePath = "/path/to/pom.xml",
-                oldVersion = "1.0.0",
-                newVersion = "1.1.0",
-                wasAdded = false
-            )
+            val updateResult =
+                UpdateResult(
+                    success = true,
+                    message = "Dependency updated successfully",
+                    filePath = "/path/to/pom.xml",
+                    oldVersion = "1.0.0",
+                    newVersion = "1.1.0",
+                    wasAdded = false,
+                )
 
             val jsonString = json.encodeToString(updateResult)
             val deserializedResult = json.decodeFromString<UpdateResult>(jsonString)
@@ -200,11 +200,12 @@ class DataModelsTest {
         @Test
         @DisplayName("Should handle default values correctly")
         fun testUpdateResultWithDefaults() {
-            val updateResult = UpdateResult(
-                success = false,
-                message = "File not found",
-                filePath = "/path/to/build.gradle"
-            )
+            val updateResult =
+                UpdateResult(
+                    success = false,
+                    message = "File not found",
+                    filePath = "/path/to/build.gradle",
+                )
 
             val jsonString = json.encodeToString(updateResult)
             val deserializedResult = json.decodeFromString<UpdateResult>(jsonString)
@@ -221,14 +222,15 @@ class DataModelsTest {
         @Test
         @DisplayName("Should handle new dependency addition")
         fun testUpdateResultForNewDependency() {
-            val updateResult = UpdateResult(
-                success = true,
-                message = "New dependency added",
-                filePath = "/path/to/pom.xml",
-                oldVersion = null,
-                newVersion = "2.0.0",
-                wasAdded = true
-            )
+            val updateResult =
+                UpdateResult(
+                    success = true,
+                    message = "New dependency added",
+                    filePath = "/path/to/pom.xml",
+                    oldVersion = null,
+                    newVersion = "2.0.0",
+                    wasAdded = true,
+                )
 
             val jsonString = json.encodeToString(updateResult)
             val deserializedResult = json.decodeFromString<UpdateResult>(jsonString)
@@ -245,20 +247,21 @@ class DataModelsTest {
     @Nested
     @DisplayName("SearchResult Tests")
     inner class SearchResultTests {
-
         @Test
         @DisplayName("Should serialize and deserialize search result with dependencies")
         fun testSearchResultSerialization() {
-            val dependencies = listOf(
-                Dependency("org.springframework", "spring-core", "Spring Core"),
-                Dependency("org.springframework", "spring-web", "Spring Web")
-            )
+            val dependencies =
+                listOf(
+                    Dependency("org.springframework", "spring-core", "Spring Core"),
+                    Dependency("org.springframework", "spring-web", "Spring Web"),
+                )
 
-            val searchResult = SearchResult(
-                dependencies = dependencies,
-                totalResults = 2,
-                query = "spring"
-            )
+            val searchResult =
+                SearchResult(
+                    dependencies = dependencies,
+                    totalResults = 2,
+                    query = "spring",
+                )
 
             val jsonString = json.encodeToString(searchResult)
             val deserializedResult = json.decodeFromString<SearchResult>(jsonString)
@@ -274,11 +277,12 @@ class DataModelsTest {
         @Test
         @DisplayName("Should handle empty search results")
         fun testSearchResultEmpty() {
-            val searchResult = SearchResult(
-                dependencies = emptyList(),
-                totalResults = 0,
-                query = "nonexistent"
-            )
+            val searchResult =
+                SearchResult(
+                    dependencies = emptyList(),
+                    totalResults = 0,
+                    query = "nonexistent",
+                )
 
             val jsonString = json.encodeToString(searchResult)
             val deserializedResult = json.decodeFromString<SearchResult>(jsonString)
@@ -293,7 +297,6 @@ class DataModelsTest {
     @Nested
     @DisplayName("Data Model Validation Tests")
     inner class ValidationTests {
-
         @Test
         @DisplayName("Should handle empty string values in data models")
         fun testDataModelValidation() {

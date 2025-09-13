@@ -8,17 +8,16 @@ import org.junit.jupiter.api.Test
 
 @DisplayName("VersionParser Tests")
 class VersionParserTest {
-
     private val versionParser = VersionParser()
 
     @Nested
     @DisplayName("Latest Version Parsing")
     inner class LatestVersionParsingTests {
-
         @Test
         @DisplayName("Should parse latest version from table structure")
         fun shouldParseLatestVersionFromTable() {
-            val html = """
+            val html =
+                """
                 <html>
                 <body>
                     <table class="grid">
@@ -37,7 +36,7 @@ class VersionParserTest {
                     </table>
                 </body>
                 </html>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = versionParser.parseLatestVersion(html, "org.springframework.boot", "spring-boot-starter")
 
@@ -51,7 +50,8 @@ class VersionParserTest {
         @Test
         @DisplayName("Should parse latest version from version buttons")
         fun shouldParseLatestVersionFromButtons() {
-            val html = """
+            val html =
+                """
                 <html>
                 <body>
                     <div class="vbtn">2.7.18</div>
@@ -59,7 +59,7 @@ class VersionParserTest {
                     <div class="vbtn">2.7.16</div>
                 </body>
                 </html>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = versionParser.parseLatestVersion(html, "org.springframework", "spring-core")
 
@@ -71,13 +71,14 @@ class VersionParserTest {
         @Test
         @DisplayName("Should return null when no version found")
         fun shouldReturnNullWhenNoVersionFound() {
-            val html = """
+            val html =
+                """
                 <html>
                 <body>
                     <p>No versions available</p>
                 </body>
                 </html>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = versionParser.parseLatestVersion(html, "com.example", "nonexistent")
 
@@ -88,11 +89,11 @@ class VersionParserTest {
     @Nested
     @DisplayName("All Versions Parsing")
     inner class AllVersionsParsingTests {
-
         @Test
         @DisplayName("Should parse all versions from table and sort correctly")
         fun shouldParseAllVersionsFromTable() {
-            val html = """
+            val html =
+                """
                 <html>
                 <body>
                     <table class="grid">
@@ -116,7 +117,7 @@ class VersionParserTest {
                     </table>
                 </body>
                 </html>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = versionParser.parseAllVersions(html, "org.junit.jupiter", "junit-jupiter")
 
@@ -132,7 +133,8 @@ class VersionParserTest {
         @Test
         @DisplayName("Should handle empty version list")
         fun shouldHandleEmptyVersionList() {
-            val html = """
+            val html =
+                """
                 <html>
                 <body>
                     <table class="grid">
@@ -141,7 +143,7 @@ class VersionParserTest {
                     </table>
                 </body>
                 </html>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = versionParser.parseAllVersions(html, "com.example", "empty")
 
@@ -151,7 +153,8 @@ class VersionParserTest {
         @Test
         @DisplayName("Should parse versions from fallback elements")
         fun shouldParseVersionsFromFallbackElements() {
-            val html = """
+            val html =
+                """
                 <html>
                 <body>
                     <a href="/artifact/com.google.guava/guava/32.1.3-jre">32.1.3-jre</a>
@@ -159,7 +162,7 @@ class VersionParserTest {
                     <a href="/artifact/com.google.guava/guava/32.1.1-jre">32.1.1-jre</a>
                 </body>
                 </html>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = versionParser.parseAllVersions(html, "com.google.guava", "guava")
 
@@ -172,17 +175,17 @@ class VersionParserTest {
     @Nested
     @DisplayName("Version Filtering")
     inner class VersionFilteringTests {
-
-        private val testVersions = listOf(
-            Version("3.2.1", isLatest = true),
-            Version("3.2.0"),
-            Version("3.2.0-SNAPSHOT"),
-            Version("3.1.5"),
-            Version("3.1.0-alpha1"),
-            Version("3.1.0-beta2"),
-            Version("3.1.0-RC1"),
-            Version("3.0.12")
-        )
+        private val testVersions =
+            listOf(
+                Version("3.2.1", isLatest = true),
+                Version("3.2.0"),
+                Version("3.2.0-SNAPSHOT"),
+                Version("3.1.5"),
+                Version("3.1.0-alpha1"),
+                Version("3.1.0-beta2"),
+                Version("3.1.0-RC1"),
+                Version("3.0.12"),
+            )
 
         @Test
         @DisplayName("Should filter out snapshots by default")
@@ -272,16 +275,16 @@ class VersionParserTest {
     @Nested
     @DisplayName("Version Text Extraction")
     inner class VersionTextExtractionTests {
-
         @Test
         @DisplayName("Should extract version from table cell link")
         fun shouldExtractVersionFromTableCellLink() {
-            val html = """
+            val html =
+                """
                 <tr>
                     <td><a href="/artifact/group/artifact/1.2.3">1.2.3</a></td>
                     <td>2023-12-01</td>
                 </tr>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = versionParser.parseAllVersions("<table><tbody>$html</tbody></table>", "group", "artifact")
 
@@ -292,9 +295,10 @@ class VersionParserTest {
         @Test
         @DisplayName("Should extract version from href when text is not version")
         fun shouldExtractVersionFromHrefWhenTextIsNotVersion() {
-            val html = """
+            val html =
+                """
                 <a href="/artifact/org.springframework/spring-core/5.3.23">Spring Core</a>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = versionParser.parseAllVersions(html, "org.springframework", "spring-core")
 
@@ -306,11 +310,11 @@ class VersionParserTest {
     @Nested
     @DisplayName("Date Parsing")
     inner class DateParsingTests {
-
         @Test
         @DisplayName("Should parse ISO date format")
         fun shouldParseISODateFormat() {
-            val html = """
+            val html =
+                """
                 <table class="grid">
                     <tbody>
                         <tr>
@@ -319,7 +323,7 @@ class VersionParserTest {
                         </tr>
                     </tbody>
                 </table>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = versionParser.parseAllVersions(html, "group", "artifact")
 
@@ -330,7 +334,8 @@ class VersionParserTest {
         @Test
         @DisplayName("Should parse US date format")
         fun shouldParseUSDateFormat() {
-            val html = """
+            val html =
+                """
                 <table class="grid">
                     <tbody>
                         <tr>
@@ -339,7 +344,7 @@ class VersionParserTest {
                         </tr>
                     </tbody>
                 </table>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = versionParser.parseAllVersions(html, "group", "artifact")
 
@@ -350,7 +355,8 @@ class VersionParserTest {
         @Test
         @DisplayName("Should parse month name date format")
         fun shouldParseMonthNameDateFormat() {
-            val html = """
+            val html =
+                """
                 <table class="grid">
                     <tbody>
                         <tr>
@@ -359,7 +365,7 @@ class VersionParserTest {
                         </tr>
                     </tbody>
                 </table>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = versionParser.parseAllVersions(html, "group", "artifact")
 
@@ -371,11 +377,11 @@ class VersionParserTest {
     @Nested
     @DisplayName("Download Count Parsing")
     inner class DownloadCountParsingTests {
-
         @Test
         @DisplayName("Should parse download count with K suffix")
         fun shouldParseDownloadCountWithKSuffix() {
-            val html = """
+            val html =
+                """
                 <table class="grid">
                     <tbody>
                         <tr>
@@ -385,7 +391,7 @@ class VersionParserTest {
                         </tr>
                     </tbody>
                 </table>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = versionParser.parseAllVersions(html, "group", "artifact")
 
@@ -396,7 +402,8 @@ class VersionParserTest {
         @Test
         @DisplayName("Should parse download count with M suffix")
         fun shouldParseDownloadCountWithMSuffix() {
-            val html = """
+            val html =
+                """
                 <table class="grid">
                     <tbody>
                         <tr>
@@ -406,7 +413,7 @@ class VersionParserTest {
                         </tr>
                     </tbody>
                 </table>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = versionParser.parseAllVersions(html, "group", "artifact")
 
@@ -417,7 +424,8 @@ class VersionParserTest {
         @Test
         @DisplayName("Should parse raw download count")
         fun shouldParseRawDownloadCount() {
-            val html = """
+            val html =
+                """
                 <table class="grid">
                     <tbody>
                         <tr>
@@ -427,7 +435,7 @@ class VersionParserTest {
                         </tr>
                     </tbody>
                 </table>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = versionParser.parseAllVersions(html, "group", "artifact")
 
@@ -439,7 +447,6 @@ class VersionParserTest {
     @Nested
     @DisplayName("Error Handling")
     inner class ErrorHandlingTests {
-
         @Test
         @DisplayName("Should handle malformed HTML gracefully")
         fun shouldHandleMalformedHTMLGracefully() {
@@ -463,7 +470,8 @@ class VersionParserTest {
         @Test
         @DisplayName("Should handle invalid date formats gracefully")
         fun shouldHandleInvalidDateFormatsGracefully() {
-            val html = """
+            val html =
+                """
                 <table class="grid">
                     <tbody>
                         <tr>
@@ -472,7 +480,7 @@ class VersionParserTest {
                         </tr>
                     </tbody>
                 </table>
-            """.trimIndent()
+                """.trimIndent()
 
             val result = versionParser.parseAllVersions(html, "group", "artifact")
 

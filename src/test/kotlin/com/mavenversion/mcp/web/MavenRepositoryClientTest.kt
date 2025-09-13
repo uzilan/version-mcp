@@ -1,10 +1,10 @@
 package com.mavenversion.mcp.web
 
 import com.mavenversion.mcp.client.PlaywrightMCPClient
-import com.mavenversion.mcp.reliability.PlaywrightMCPException
-import com.mavenversion.mcp.reliability.ReliabilityService
 import com.mavenversion.mcp.models.Dependency
 import com.mavenversion.mcp.models.SearchResult
+import com.mavenversion.mcp.reliability.PlaywrightMCPException
+import com.mavenversion.mcp.reliability.ReliabilityService
 import io.mockk.Runs
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
@@ -32,7 +32,7 @@ class MavenRepositoryClientTest {
         mavenRepositoryClient =
             MavenRepositoryClient(
                 playwrightClient = mockPlaywrightClient,
-                reliabilityService = ReliabilityService(maxRetries = 2, baseDelayMs = 100, rateLimitDelayMs = 50)
+                reliabilityService = ReliabilityService(maxRetries = 2, baseDelayMs = 100, rateLimitDelayMs = 50),
             )
     }
 
@@ -119,31 +119,35 @@ class MavenRepositoryClientTest {
             runTest {
                 val query = "spring-boot"
                 val mockSearchResultParser = mockk<SearchResultParser>()
-                val clientWithMockParser = MavenRepositoryClient(
-                    playwrightClient = mockPlaywrightClient,
-                    searchResultParser = mockSearchResultParser,
-                    reliabilityService = ReliabilityService(maxRetries = 2, baseDelayMs = 100, rateLimitDelayMs = 50)
-                )
-                
-                val htmlContent = """
+                val clientWithMockParser =
+                    MavenRepositoryClient(
+                        playwrightClient = mockPlaywrightClient,
+                        searchResultParser = mockSearchResultParser,
+                        reliabilityService = ReliabilityService(maxRetries = 2, baseDelayMs = 100, rateLimitDelayMs = 50),
+                    )
+
+                val htmlContent =
+                    """
                     <div class="im">
                         <a href="/artifact/org.springframework.boot/spring-boot-starter">Spring Boot Starter</a>
                         <p>Core starter for Spring Boot applications</p>
                     </div>
-                """.trimIndent()
-                
-                val expectedSearchResult = SearchResult(
-                    dependencies = listOf(
-                        Dependency(
-                            groupId = "org.springframework.boot",
-                            artifactId = "spring-boot-starter",
-                            description = "Core starter for Spring Boot applications",
-                            url = "https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter"
-                        )
-                    ),
-                    totalResults = 1,
-                    query = query
-                )
+                    """.trimIndent()
+
+                val expectedSearchResult =
+                    SearchResult(
+                        dependencies =
+                            listOf(
+                                Dependency(
+                                    groupId = "org.springframework.boot",
+                                    artifactId = "spring-boot-starter",
+                                    description = "Core starter for Spring Boot applications",
+                                    url = "https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter",
+                                ),
+                            ),
+                        totalResults = 1,
+                        query = query,
+                    )
 
                 coEvery { mockPlaywrightClient.navigateToUrl("https://mvnrepository.com") } returns
                     Result.success("<html>Homepage</html>")
@@ -387,7 +391,8 @@ class MavenRepositoryClientTest {
                 val groupId = "org.springframework.boot"
                 val artifactId = "spring-boot-starter"
                 val expectedUrl = "https://mvnrepository.com/artifact/$groupId/$artifactId"
-                val htmlContent = """
+                val htmlContent =
+                    """
                     <table class="grid">
                         <tbody>
                             <tr>
@@ -397,7 +402,7 @@ class MavenRepositoryClientTest {
                             </tr>
                         </tbody>
                     </table>
-                """.trimIndent()
+                    """.trimIndent()
 
                 coEvery { mockPlaywrightClient.navigateToUrl(expectedUrl) } returns Result.success(htmlContent)
                 coEvery { mockPlaywrightClient.waitForElement(".im", 10000) } returns Result.success(Unit)
@@ -424,7 +429,8 @@ class MavenRepositoryClientTest {
                 val groupId = "org.junit.jupiter"
                 val artifactId = "junit-jupiter"
                 val expectedUrl = "https://mvnrepository.com/artifact/$groupId/$artifactId"
-                val htmlContent = """
+                val htmlContent =
+                    """
                     <table class="grid">
                         <tbody>
                             <tr>
@@ -444,7 +450,7 @@ class MavenRepositoryClientTest {
                             </tr>
                         </tbody>
                     </table>
-                """.trimIndent()
+                    """.trimIndent()
 
                 coEvery { mockPlaywrightClient.navigateToUrl(expectedUrl) } returns Result.success(htmlContent)
                 coEvery { mockPlaywrightClient.waitForElement(".im", 10000) } returns Result.success(Unit)
