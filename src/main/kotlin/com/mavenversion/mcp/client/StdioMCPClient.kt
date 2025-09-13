@@ -1,5 +1,6 @@
 package com.mavenversion.mcp.client
 
+import com.mavenversion.mcp.reliability.MCPToolException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

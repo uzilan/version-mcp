@@ -46,7 +46,7 @@
   - Write integration tests for reliability features with Playwright MCP
   - _Requirements: 7.2, 7.3, 7.4_
 
-- [-] 6.5. Refactor MCP client architecture to use stdio-based communication
+- [ ] 6.5. Refactor MCP client architecture to use stdio-based communication
   - Replace HTTP-based MCP client with proper stdio-based MCP protocol implementation
   - Implement subprocess management for launching Playwright MCP server via npx/uvx
   - Create proper MCP protocol message serialization/deserialization over stdin/stdout

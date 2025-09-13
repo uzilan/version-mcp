@@ -35,7 +35,7 @@ src/
 - Playwright MCP Server (via uvx or npx)
 - Kotlinx.serialization for JSON handling
 - DOM4J for XML processing
-- Ktor for HTTP client functionality (legacy support)
+- Process management for MCP server communication
 - Logback for logging
 
 ## Prerequisites
