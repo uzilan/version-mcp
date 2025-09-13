@@ -296,5 +296,5 @@ class MavenRepositoryClient(
     /**
      * Check if the client is connected
      */
-    fun isConnected(): Boolean = playwrightClient.isConnected()
+    suspend fun isConnected(): Boolean = playwrightClient.isConnected()
 }

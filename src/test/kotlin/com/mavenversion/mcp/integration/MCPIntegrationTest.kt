@@ -1,5 +1,7 @@
 package com.mavenversion.mcp.integration
 
+import com.mavenversion.mcp.client.MCPProcessManager
+import com.mavenversion.mcp.client.MCPServerConfig
 import com.mavenversion.mcp.client.PlaywrightMCPClient
 import com.mavenversion.mcp.web.MavenRepositoryClient
 import kotlinx.coroutines.test.runTest
@@ -12,21 +14,35 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 class MCPIntegrationTest {
     @Test
     @DisplayName("Should create MCP client instances")
-    fun shouldCreateMCPClientInstances() {
-        val playwrightClient = PlaywrightMCPClient()
+    fun shouldCreateMCPClientInstances() = runTest {
+        val config = MCPServerConfig(
+            name = "test-playwright",
+            command = listOf("echo", "test"),
+            autoRestart = false
+        )
+        val processManager = MCPProcessManager()
+        val playwrightClient = PlaywrightMCPClient(config, processManager)
         val mavenRepositoryClient = MavenRepositoryClient(playwrightClient)
 
         assertThat(playwrightClient).isNotNull()
         assertThat(mavenRepositoryClient).isNotNull()
         assertThat(playwrightClient.isConnected()).isFalse()
         assertThat(mavenRepositoryClient.isConnected()).isFalse()
+        
+        processManager.stopAll()
     }
 
     @Test
     @DisplayName("Should handle connection attempts gracefully")
     fun shouldHandleConnectionAttemptsGracefully() =
         runTest {
-            val playwrightClient = PlaywrightMCPClient()
+            val config = MCPServerConfig(
+                name = "test-playwright",
+                command = listOf("echo", "test"),
+                autoRestart = false
+            )
+            val processManager = MCPProcessManager()
+            val playwrightClient = PlaywrightMCPClient(config, processManager)
             val mavenRepositoryClient = MavenRepositoryClient(playwrightClient)
 
             // These will fail in test environment but should not throw exceptions
@@ -39,14 +55,17 @@ class MCPIntegrationTest {
             // Cleanup
             playwrightClient.disconnect()
             mavenRepositoryClient.close()
+            processManager.stopAll()
         }
 
     @Test
-    @EnabledIfEnvironmentVariable(named = "MCP_SERVER_RUNNING", matches = "true")
+    @EnabledIfEnvironmentVariable(named = "INTEGRATION_TESTS", matches = "true")
     @DisplayName("Should connect to live MCP server when available")
     fun shouldConnectToLiveMCPServerWhenAvailable() =
         runTest {
-            val playwrightClient = PlaywrightMCPClient("http://localhost:3000")
+            val config = MCPServerConfig.playwrightDefault()
+            val processManager = MCPProcessManager()
+            val playwrightClient = PlaywrightMCPClient(config, processManager)
             val mavenRepositoryClient = MavenRepositoryClient(playwrightClient)
 
             try {
@@ -61,6 +80,7 @@ class MCPIntegrationTest {
                 }
             } finally {
                 mavenRepositoryClient.close()
+                processManager.stopAll()
             }
         }
 }

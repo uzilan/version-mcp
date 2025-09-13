@@ -353,13 +353,13 @@ class MavenRepositoryClientTest {
 
         @Test
         @DisplayName("Should report connection status")
-        fun shouldReportConnectionStatus() {
-            every { mockPlaywrightClient.isConnected() } returns true
+        fun shouldReportConnectionStatus() = runTest {
+            coEvery { mockPlaywrightClient.isConnected() } returns true
 
             val isConnected = mavenRepositoryClient.isConnected()
 
             assertThat(isConnected).isTrue()
-            verify { mockPlaywrightClient.isConnected() }
+            coVerify { mockPlaywrightClient.isConnected() }
         }
     }
 

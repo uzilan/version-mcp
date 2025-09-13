@@ -1,5 +1,7 @@
 package com.mavenversion.mcp.integration
 
+import com.mavenversion.mcp.client.MCPProcessManager
+import com.mavenversion.mcp.client.MCPServerConfig
 import com.mavenversion.mcp.client.PlaywrightMCPClient
 import com.mavenversion.mcp.reliability.ReliabilityService
 import com.mavenversion.mcp.web.MavenRepositoryClient
@@ -130,7 +132,13 @@ class ReliabilityIntegrationTest {
                 // This test would require a way to simulate MCP server disconnections
                 // For now, we test the basic recovery mechanism
 
-                val playwrightClient = PlaywrightMCPClient()
+                val config = MCPServerConfig(
+                    name = "test-playwright",
+                    command = listOf("echo", "test"),
+                    autoRestart = false
+                )
+                val processManager = MCPProcessManager()
+                val playwrightClient = PlaywrightMCPClient(config, processManager)
 
                 // Test connection
                 val connectResult = playwrightClient.connect()

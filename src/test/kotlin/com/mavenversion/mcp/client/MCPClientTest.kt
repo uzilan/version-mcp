@@ -11,7 +11,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
-@DisplayName("MCP Client Tests")
+@DisplayName("MCP Client Tests (Legacy HTTP-based)")
 class MCPClientTest {
     private lateinit var mcpClient: MCPClient
     private val testServerUrl = "http://localhost:3000"

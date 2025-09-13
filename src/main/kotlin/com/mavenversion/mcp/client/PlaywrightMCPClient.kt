@@ -8,17 +8,23 @@ import mu.KotlinLogging
 private val log = KotlinLogging.logger {}
 
 /**
- * Specialized MCP client for Playwright operations
+ * Specialized MCP client for Playwright operations using stdio-based communication
  */
 class PlaywrightMCPClient(
-    serverUrl: String = "http://localhost:3000",
+    private val config: MCPServerConfig = MCPServerConfig.playwrightDefault(),
+    private val processManager: MCPProcessManager = MCPProcessManager()
 ) {
-    private val mcpClient = MCPClient(serverUrl)
+    private suspend fun getClient(): StdioMCPClient {
+        return processManager.getClient(config).getOrThrow()
+    }
 
     /**
      * Connect to the Playwright MCP server
      */
-    suspend fun connect(): Result<Unit> = mcpClient.connect()
+    suspend fun connect(): Result<Unit> = runCatching {
+        getClient()
+        Unit
+    }
 
     /**
      * Navigate to a URL using Playwright
@@ -36,7 +42,7 @@ class PlaywrightMCPClient(
                         ),
                 )
 
-            val response = mcpClient.callTool(request).getOrThrow()
+            val response = getClient().callTool(request).getOrThrow()
 
             if (response.isError) {
                 throw PlaywrightMCPException("Navigation failed: ${response.content.firstOrNull()?.text}")
@@ -68,7 +74,7 @@ class PlaywrightMCPClient(
                         ),
                 )
 
-            val response = mcpClient.callTool(request).getOrThrow()
+            val response = getClient().callTool(request).getOrThrow()
 
             if (response.isError) {
                 throw PlaywrightMCPException("Click failed: ${response.content.firstOrNull()?.text}")
@@ -99,7 +105,7 @@ class PlaywrightMCPClient(
                         ),
                 )
 
-            val response = mcpClient.callTool(request).getOrThrow()
+            val response = getClient().callTool(request).getOrThrow()
 
             if (response.isError) {
                 throw PlaywrightMCPException("Fill failed: ${response.content.firstOrNull()?.text}")
@@ -126,7 +132,7 @@ class PlaywrightMCPClient(
                         ),
                 )
 
-            val response = mcpClient.callTool(request).getOrThrow()
+            val response = getClient().callTool(request).getOrThrow()
 
             if (response.isError) {
                 throw PlaywrightMCPException("Get text failed: ${response.content.firstOrNull()?.text}")
@@ -162,7 +168,7 @@ class PlaywrightMCPClient(
                         ),
                 )
 
-            val response = mcpClient.callTool(request).getOrThrow()
+            val response = getClient().callTool(request).getOrThrow()
 
             if (response.isError) {
                 throw PlaywrightMCPException("Wait for element failed: ${response.content.firstOrNull()?.text}")
@@ -186,7 +192,7 @@ class PlaywrightMCPClient(
                     arguments = emptyMap<String, JsonElement>(),
                 )
 
-            val response = mcpClient.callTool(request).getOrThrow()
+            val response = getClient().callTool(request).getOrThrow()
 
             if (response.isError) {
                 throw PlaywrightMCPException("Get page content failed: ${response.content.firstOrNull()?.text}")
@@ -206,11 +212,18 @@ class PlaywrightMCPClient(
      * Disconnect from the Playwright MCP server
      */
     suspend fun disconnect() {
-        mcpClient.disconnect()
+        processManager.stopServer(config.name)
     }
 
     /**
      * Check if connected to the MCP server
      */
-    fun isConnected(): Boolean = mcpClient.isConnected()
+    suspend fun isConnected(): Boolean = runCatching {
+        processManager.healthCheck(config.name).getOrElse { false }
+    }.getOrElse { false }
+    
+    /**
+     * Restart the Playwright MCP server connection
+     */
+    suspend fun restart(): Result<Unit> = processManager.restartServer(config.name)
 }

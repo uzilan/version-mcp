@@ -14,19 +14,22 @@ import org.junit.jupiter.api.Test
 @DisplayName("Playwright MCP Client Tests")
 class PlaywrightMCPClientTest {
     private lateinit var playwrightClient: PlaywrightMCPClient
-    private lateinit var mockMCPClient: MCPClient
+    private lateinit var processManager: MCPProcessManager
 
     @BeforeEach
     fun setUp() {
-        mockMCPClient = mockk<MCPClient>()
-        playwrightClient = PlaywrightMCPClient()
-
-        // Mock the internal MCP client using reflection or dependency injection
-        // For now, we'll test the public interface
+        processManager = MCPProcessManager()
+        val config = MCPServerConfig(
+            name = "test-playwright",
+            command = listOf("echo", "test"), // Invalid MCP server for testing
+            autoRestart = false
+        )
+        playwrightClient = PlaywrightMCPClient(config, processManager)
     }
 
     @AfterEach
-    fun tearDown() {
+    fun tearDown() = runTest {
+        processManager.stopAll()
         clearAllMocks()
     }
 
@@ -179,7 +182,7 @@ class PlaywrightMCPClientTest {
 
         @Test
         @DisplayName("Should report connection status")
-        fun shouldReportConnectionStatus() {
+        fun shouldReportConnectionStatus() = runTest {
             assertThat(playwrightClient.isConnected()).isFalse()
         }
     }

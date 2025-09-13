@@ -1,5 +1,7 @@
 package com.mavenversion.mcp.examples
 
+import com.mavenversion.mcp.client.MCPProcessManager
+import com.mavenversion.mcp.client.MCPServerConfig
 import com.mavenversion.mcp.client.PlaywrightMCPClient
 import com.mavenversion.mcp.web.MavenRepositoryClient
 import kotlinx.coroutines.runBlocking
@@ -16,7 +18,7 @@ private val log = KotlinLogging.logger {}
  * 3. Handle errors and cleanup resources
  *
  * To run this example, you need:
- * 1. A Playwright MCP server running on localhost:3000
+ * 1. uvx or npx installed to run the Playwright MCP server
  * 2. The MCP server should expose playwright tools like:
  *    - playwright_navigate
  *    - playwright_click
@@ -31,7 +33,9 @@ object MCPPlaywrightExample {
         runBlocking {
             log.info { "Starting MCP Playwright Example" }
 
-            val playwrightClient = PlaywrightMCPClient("http://localhost:3000")
+            val config = MCPServerConfig.playwrightDefault()
+            val processManager = MCPProcessManager()
+            val playwrightClient = PlaywrightMCPClient(config, processManager)
             val mavenRepositoryClient = MavenRepositoryClient(playwrightClient)
 
             try {
@@ -41,7 +45,7 @@ object MCPPlaywrightExample {
 
                 if (initResult.isFailure) {
                     log.error { "Failed to initialize MCP client: ${initResult.exceptionOrNull()?.message}" }
-                    log.info { "Make sure a Playwright MCP server is running on localhost:3000" }
+                    log.info { "Make sure uvx or npx is installed to run the Playwright MCP server" }
                     return@runBlocking
                 }
 
@@ -108,6 +112,7 @@ object MCPPlaywrightExample {
                 // Always cleanup resources
                 log.info { "Cleaning up resources..." }
                 mavenRepositoryClient.close()
+                processManager.stopAll()
                 log.info { "MCP Playwright Example finished" }
             }
         }
