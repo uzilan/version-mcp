@@ -51,3 +51,7 @@ class MyClass {
     }
 }
 ```
+
+## Development Workflow
+- **Commit after each task completion** - Always commit changes to version control after successfully completing each task from the implementation plan
+- This ensures incremental progress is saved and provides clear checkpoints for rollback if needed

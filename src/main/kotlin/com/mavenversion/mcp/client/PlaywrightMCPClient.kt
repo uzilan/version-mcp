@@ -1,5 +1,7 @@
 package com.mavenversion.mcp.client
 
+import com.mavenversion.mcp.reliability.PlaywrightMCPException
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import mu.KotlinLogging
 
@@ -29,7 +31,7 @@ class PlaywrightMCPClient(
                 MCPToolRequest(
                     name = "playwright_navigate",
                     arguments =
-                        mapOf(
+                        mapOf<String, JsonElement>(
                             "url" to JsonPrimitive(url),
                         ),
                 )
@@ -61,7 +63,7 @@ class PlaywrightMCPClient(
                 MCPToolRequest(
                     name = "playwright_click",
                     arguments =
-                        mapOf(
+                        mapOf<String, JsonElement>(
                             "selector" to JsonPrimitive(selector),
                         ),
                 )
@@ -91,7 +93,7 @@ class PlaywrightMCPClient(
                 MCPToolRequest(
                     name = "playwright_fill",
                     arguments =
-                        mapOf(
+                        mapOf<String, JsonElement>(
                             "selector" to JsonPrimitive(selector),
                             "value" to JsonPrimitive(value),
                         ),
@@ -119,7 +121,7 @@ class PlaywrightMCPClient(
                 MCPToolRequest(
                     name = "playwright_get_text",
                     arguments =
-                        mapOf(
+                        mapOf<String, JsonElement>(
                             "selector" to JsonPrimitive(selector),
                         ),
                 )
@@ -154,7 +156,7 @@ class PlaywrightMCPClient(
                 MCPToolRequest(
                     name = "playwright_wait_for_selector",
                     arguments =
-                        mapOf(
+                        mapOf<String, JsonElement>(
                             "selector" to JsonPrimitive(selector),
                             "timeout" to JsonPrimitive(timeoutMs),
                         ),
@@ -181,7 +183,7 @@ class PlaywrightMCPClient(
             val request =
                 MCPToolRequest(
                     name = "playwright_get_content",
-                    arguments = emptyMap(),
+                    arguments = emptyMap<String, JsonElement>(),
                 )
 
             val response = mcpClient.callTool(request).getOrThrow()
@@ -213,7 +215,4 @@ class PlaywrightMCPClient(
     fun isConnected(): Boolean = mcpClient.isConnected()
 }
 
-/**
- * Exception thrown when Playwright MCP operations fail
- */
-class PlaywrightMCPException(message: String, cause: Throwable? = null) : Exception(message, cause)
+

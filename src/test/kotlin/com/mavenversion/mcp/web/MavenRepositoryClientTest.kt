@@ -1,7 +1,8 @@
 package com.mavenversion.mcp.web
 
 import com.mavenversion.mcp.client.PlaywrightMCPClient
-import com.mavenversion.mcp.client.PlaywrightMCPException
+import com.mavenversion.mcp.reliability.PlaywrightMCPException
+import com.mavenversion.mcp.reliability.ReliabilityService
 import com.mavenversion.mcp.models.Dependency
 import com.mavenversion.mcp.models.SearchResult
 import io.mockk.Runs
@@ -31,8 +32,7 @@ class MavenRepositoryClientTest {
         mavenRepositoryClient =
             MavenRepositoryClient(
                 playwrightClient = mockPlaywrightClient,
-                maxRetries = 2,
-                baseDelayMs = 100,
+                reliabilityService = ReliabilityService(maxRetries = 2, baseDelayMs = 100, rateLimitDelayMs = 50)
             )
     }
 
@@ -122,8 +122,7 @@ class MavenRepositoryClientTest {
                 val clientWithMockParser = MavenRepositoryClient(
                     playwrightClient = mockPlaywrightClient,
                     searchResultParser = mockSearchResultParser,
-                    maxRetries = 2,
-                    baseDelayMs = 100
+                    reliabilityService = ReliabilityService(maxRetries = 2, baseDelayMs = 100, rateLimitDelayMs = 50)
                 )
                 
                 val htmlContent = """
@@ -375,6 +374,153 @@ class MavenRepositoryClientTest {
                 assertThat(result.isSuccess).isTrue()
                 assertThat(result.getOrNull()).isEqualTo(expectedContent)
                 coVerify { mockPlaywrightClient.getPageContent() }
+            }
+    }
+
+    @Nested
+    @DisplayName("Version Retrieval Tests")
+    inner class VersionRetrievalTests {
+        @Test
+        @DisplayName("Should get latest version successfully")
+        fun shouldGetLatestVersionSuccessfully() =
+            runTest {
+                val groupId = "org.springframework.boot"
+                val artifactId = "spring-boot-starter"
+                val expectedUrl = "https://mvnrepository.com/artifact/$groupId/$artifactId"
+                val htmlContent = """
+                    <table class="grid">
+                        <tbody>
+                            <tr>
+                                <td><a href="/artifact/$groupId/$artifactId/3.2.1">3.2.1</a></td>
+                                <td>Dec 21, 2023</td>
+                                <td>1.2M</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                """.trimIndent()
+
+                coEvery { mockPlaywrightClient.navigateToUrl(expectedUrl) } returns Result.success(htmlContent)
+                coEvery { mockPlaywrightClient.waitForElement(".im", 10000) } returns Result.success(Unit)
+                coEvery { mockPlaywrightClient.getPageContent() } returns Result.success(htmlContent)
+
+                val result = mavenRepositoryClient.getLatestVersion(groupId, artifactId)
+
+                assertThat(result.isSuccess).isTrue()
+                val version = result.getOrNull()
+                assertThat(version).isNotNull()
+                assertThat(version!!.version).isEqualTo("3.2.1")
+                assertThat(version.isLatest).isTrue()
+                assertThat(version.releaseDate).isEqualTo("2023-12-21")
+
+                coVerify { mockPlaywrightClient.navigateToUrl(expectedUrl) }
+                coVerify { mockPlaywrightClient.waitForElement(".im", 10000) }
+                coVerify { mockPlaywrightClient.getPageContent() }
+            }
+
+        @Test
+        @DisplayName("Should get all versions successfully")
+        fun shouldGetAllVersionsSuccessfully() =
+            runTest {
+                val groupId = "org.junit.jupiter"
+                val artifactId = "junit-jupiter"
+                val expectedUrl = "https://mvnrepository.com/artifact/$groupId/$artifactId"
+                val htmlContent = """
+                    <table class="grid">
+                        <tbody>
+                            <tr>
+                                <td><a href="/artifact/$groupId/$artifactId/5.10.1">5.10.1</a></td>
+                                <td>2023-10-12</td>
+                                <td>2.1M</td>
+                            </tr>
+                            <tr>
+                                <td><a href="/artifact/$groupId/$artifactId/5.10.0">5.10.0</a></td>
+                                <td>2023-07-23</td>
+                                <td>1.8M</td>
+                            </tr>
+                            <tr>
+                                <td><a href="/artifact/$groupId/$artifactId/5.9.3">5.9.3</a></td>
+                                <td>2023-04-18</td>
+                                <td>1.5M</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                """.trimIndent()
+
+                coEvery { mockPlaywrightClient.navigateToUrl(expectedUrl) } returns Result.success(htmlContent)
+                coEvery { mockPlaywrightClient.waitForElement(".im", 10000) } returns Result.success(Unit)
+                coEvery { mockPlaywrightClient.getPageContent() } returns Result.success(htmlContent)
+
+                val result = mavenRepositoryClient.getAllVersions(groupId, artifactId)
+
+                assertThat(result.isSuccess).isTrue()
+                val versions = result.getOrNull()
+                assertThat(versions).isNotNull()
+                assertThat(versions!!).hasSize(3)
+                assertThat(versions[0].version).isEqualTo("5.10.1")
+                assertThat(versions[0].isLatest).isTrue()
+                assertThat(versions[1].version).isEqualTo("5.10.0")
+                assertThat(versions[1].isLatest).isFalse()
+                assertThat(versions[2].version).isEqualTo("5.9.3")
+                assertThat(versions[2].isLatest).isFalse()
+
+                coVerify { mockPlaywrightClient.navigateToUrl(expectedUrl) }
+                coVerify { mockPlaywrightClient.waitForElement(".im", 10000) }
+                coVerify { mockPlaywrightClient.getPageContent() }
+            }
+
+        @Test
+        @DisplayName("Should handle version retrieval failure")
+        fun shouldHandleVersionRetrievalFailure() =
+            runTest {
+                val groupId = "com.example"
+                val artifactId = "nonexistent"
+                val exception = PlaywrightMCPException("Dependency not found")
+
+                coEvery { mockPlaywrightClient.navigateToUrl(any()) } returns Result.failure(exception)
+
+                val latestResult = mavenRepositoryClient.getLatestVersion(groupId, artifactId)
+                val allVersionsResult = mavenRepositoryClient.getAllVersions(groupId, artifactId)
+
+                assertThat(latestResult.isFailure).isTrue()
+                assertThat(allVersionsResult.isFailure).isTrue()
+            }
+
+        @Test
+        @DisplayName("Should return null for latest version when no versions found")
+        fun shouldReturnNullForLatestVersionWhenNoVersionsFound() =
+            runTest {
+                val groupId = "com.example"
+                val artifactId = "empty"
+                val htmlContent = "<html><body><p>No versions available</p></body></html>"
+
+                coEvery { mockPlaywrightClient.navigateToUrl(any()) } returns Result.success(htmlContent)
+                coEvery { mockPlaywrightClient.waitForElement(".im", 10000) } returns Result.success(Unit)
+                coEvery { mockPlaywrightClient.getPageContent() } returns Result.success(htmlContent)
+
+                val result = mavenRepositoryClient.getLatestVersion(groupId, artifactId)
+
+                assertThat(result.isSuccess).isTrue()
+                assertThat(result.getOrNull()).isNull()
+            }
+
+        @Test
+        @DisplayName("Should return empty list for all versions when no versions found")
+        fun shouldReturnEmptyListForAllVersionsWhenNoVersionsFound() =
+            runTest {
+                val groupId = "com.example"
+                val artifactId = "empty"
+                val htmlContent = "<html><body><p>No versions available</p></body></html>"
+
+                coEvery { mockPlaywrightClient.navigateToUrl(any()) } returns Result.success(htmlContent)
+                coEvery { mockPlaywrightClient.waitForElement(".im", 10000) } returns Result.success(Unit)
+                coEvery { mockPlaywrightClient.getPageContent() } returns Result.success(htmlContent)
+
+                val result = mavenRepositoryClient.getAllVersions(groupId, artifactId)
+
+                assertThat(result.isSuccess).isTrue()
+                val versions = result.getOrNull()
+                assertThat(versions).isNotNull()
+                assertThat(versions!!).isEmpty()
             }
     }
 }

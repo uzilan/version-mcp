@@ -25,6 +25,9 @@ dependencies {
     // XML processing
     implementation("org.dom4j:dom4j:2.1.4")
     implementation("jaxen:jaxen:2.0.0")
+    
+    // HTML parsing
+    implementation("org.jsoup:jsoup:1.16.1")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")

@@ -1,5 +1,6 @@
 package com.mavenversion.mcp.client
 
+import com.mavenversion.mcp.reliability.PlaywrightMCPException
 import io.mockk.clearAllMocks
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest

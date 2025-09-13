@@ -30,7 +30,7 @@
   - Write unit tests with mock MCP responses
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 5. Implement version retrieval functionality
+- [x] 5. Implement version retrieval functionality
   - Create VersionParser to extract version information from dependency pages
   - Implement latest version retrieval from mvnrepository.com using Playwright MCP
   - Implement all versions retrieval with proper sorting using MCP navigation
@@ -38,7 +38,7 @@
   - Write unit tests for version parsing and sorting with mock MCP responses
   - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 6. Add web scraping reliability features
+- [-] 6. Add web scraping reliability features
   - Implement retry logic with exponential backoff for MCP call failures
   - Add rate limiting to respect mvnrepository.com limits through controlled MCP calls
   - Implement graceful error handling for website structure changes and MCP errors
