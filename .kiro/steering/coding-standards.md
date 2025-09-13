@@ -53,13 +53,23 @@ class MyClass {
 ```
 
 ## Development Workflow
+- **Run all tests before committing** - Always run `./gradlew test` to ensure all tests pass before committing changes
 - **Run build before committing** - Always run `./gradlew assemble` to ensure code compiles successfully before committing changes
 - **Commit after each task completion** - Always commit changes to version control after successfully completing each task from the implementation plan
 - This ensures incremental progress is saved and provides clear checkpoints for rollback if needed
-- If ktlint issues prevent build completion, use `./gradlew assemble -x ktlintCheck -x ktlintMainSourceSetCheck -x ktlintTestSourceSetCheck -x ktlintKotlinScriptCheck -x runKtlintCheckOverMainSourceSet -x runKtlintCheckOverTestSourceSet` to verify compilation
+- If ktlint issues prevent build completion, use `./gradlew test -x ktlintCheck -x ktlintMainSourceSetCheck -x ktlintTestSourceSetCheck -x ktlintKotlinScriptCheck -x runKtlintCheckOverMainSourceSet -x runKtlintCheckOverTestSourceSet` to run tests without formatting checks
 
 ## Build and Quality Checks
 - **Primary build command**: `./gradlew build` - Runs compilation, tests, and code quality checks
+- **Test execution**: `./gradlew test` - Runs all unit and integration tests
 - **Compilation only**: `./gradlew assemble` - Verifies code compiles without running tests
 - **Code formatting**: `./gradlew ktlintFormat` - Auto-formats code according to Kotlin style guide
 - **Skip ktlint when needed**: Add `-x ktlintCheck -x ktlintMainSourceSetCheck -x ktlintTestSourceSetCheck -x ktlintKotlinScriptCheck -x runKtlintCheckOverMainSourceSet -x runKtlintCheckOverTestSourceSet` to bypass formatting checks during development
+
+## Testing Requirements
+- **Write tests for all new functionality** - Every new class, method, or feature must have corresponding unit tests
+- **Maintain test coverage** - Aim for comprehensive test coverage of business logic and edge cases
+- **Test naming convention**: Use descriptive test method names and `@DisplayName` annotations
+- **Test organization**: Group related tests using `@Nested` inner classes
+- **Test isolation**: Each test should be independent and not rely on other tests
+- **Mock external dependencies**: Use MockK for mocking external services and dependencies
