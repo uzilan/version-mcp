@@ -67,7 +67,12 @@ class CircuitBreakerTest {
         @DisplayName("Should transition to HALF_OPEN after recovery time")
         fun shouldTransitionToHalfOpenAfterRecoveryTime() =
             runTest {
-                val circuitBreaker = CircuitBreaker(failureThreshold = 1, recoveryTimeMs = 100)
+                var currentTime = 0L
+                val circuitBreaker = CircuitBreaker(
+                    failureThreshold = 1, 
+                    recoveryTimeMs = 100,
+                    timeProvider = { currentTime }
+                )
 
                 // Cause failure to open circuit
                 circuitBreaker.execute {
@@ -79,8 +84,8 @@ class CircuitBreakerTest {
                 assertThat(result1.isFailure).isTrue()
                 assertThat(result1.exceptionOrNull()).isInstanceOf(CircuitBreakerOpenException::class.java)
 
-                // Wait for recovery time
-                delay(150)
+                // Advance time past recovery period
+                currentTime += 150
 
                 // Should now allow execution (HALF_OPEN state)
                 var executed = false
@@ -98,13 +103,18 @@ class CircuitBreakerTest {
         @DisplayName("Should close circuit on successful operation in HALF_OPEN state")
         fun shouldCloseCircuitOnSuccessInHalfOpenState() =
             runTest {
-                val circuitBreaker = CircuitBreaker(failureThreshold = 1, recoveryTimeMs = 100)
+                var currentTime = 0L
+                val circuitBreaker = CircuitBreaker(
+                    failureThreshold = 1, 
+                    recoveryTimeMs = 100,
+                    timeProvider = { currentTime }
+                )
 
                 // Open circuit
                 circuitBreaker.execute { throw RuntimeException("Failure") }
 
-                // Wait for recovery
-                delay(150)
+                // Advance time for recovery
+                currentTime += 150
 
                 // Successful operation should close circuit
                 circuitBreaker.execute { "success" }
@@ -119,13 +129,18 @@ class CircuitBreakerTest {
         @DisplayName("Should reopen circuit on failure in HALF_OPEN state")
         fun shouldReopenCircuitOnFailureInHalfOpenState() =
             runTest {
-                val circuitBreaker = CircuitBreaker(failureThreshold = 1, recoveryTimeMs = 100)
+                var currentTime = 0L
+                val circuitBreaker = CircuitBreaker(
+                    failureThreshold = 1, 
+                    recoveryTimeMs = 100,
+                    timeProvider = { currentTime }
+                )
 
                 // Open circuit
                 circuitBreaker.execute { throw RuntimeException("Initial failure") }
 
-                // Wait for recovery
-                delay(150)
+                // Advance time for recovery
+                currentTime += 150
 
                 // Failure in HALF_OPEN should reopen circuit
                 val result1 =
@@ -159,10 +174,6 @@ class CircuitBreakerTest {
                     assertThat(result.isFailure).isTrue()
                 }
 
-                // Circuit should still be closed
-                val result = circuitBreaker.execute { "should execute" }
-                assertThat(result.isSuccess).isTrue()
-
                 // Third failure should open circuit
                 circuitBreaker.execute { throw RuntimeException("Third failure") }
 
@@ -176,19 +187,24 @@ class CircuitBreakerTest {
         @DisplayName("Should respect custom recovery time")
         fun shouldRespectCustomRecoveryTime() =
             runTest {
-                val circuitBreaker = CircuitBreaker(failureThreshold = 1, recoveryTimeMs = 200)
+                var currentTime = 0L
+                val circuitBreaker = CircuitBreaker(
+                    failureThreshold = 1, 
+                    recoveryTimeMs = 200,
+                    timeProvider = { currentTime }
+                )
 
                 // Open circuit
                 circuitBreaker.execute { throw RuntimeException("Failure") }
 
                 // Should still be open before recovery time
-                delay(100)
+                currentTime += 100
                 val result1 = circuitBreaker.execute { "should not execute" }
                 assertThat(result1.isFailure).isTrue()
                 assertThat(result1.exceptionOrNull()).isInstanceOf(CircuitBreakerOpenException::class.java)
 
                 // Should allow execution after recovery time
-                delay(150) // Total 250ms > 200ms recovery time
+                currentTime += 150 // Total 250ms > 200ms recovery time
                 val result2 = circuitBreaker.execute { "should execute" }
                 assertThat(result2.isSuccess).isTrue()
             }

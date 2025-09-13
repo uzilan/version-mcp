@@ -46,9 +46,9 @@ class ReliabilityService(
                     lastException = e
 
                     // Check if this exception type should be retried
-                    val shouldRetry =
-                        retryableExceptions.any { it.isAssignableFrom(e::class.java) } ||
-                            isRetryableException(e)
+                    val isExplicitlyRetryable = retryableExceptions.any { it.isAssignableFrom(e::class.java) }
+                    val isImplicitlyRetryable = retryableExceptions.isEmpty() && isRetryableException(e)
+                    val shouldRetry = isExplicitlyRetryable || isImplicitlyRetryable
 
                     if (!shouldRetry) {
                         log.warn { "Non-retryable exception for $operation: ${e.message}" }
@@ -184,6 +184,7 @@ class ReliabilityService(
 class CircuitBreaker(
     private val failureThreshold: Int,
     private val recoveryTimeMs: Long,
+    private val timeProvider: () -> Long = { System.currentTimeMillis() }
 ) {
     private var failureCount = 0
     private var lastFailureTime = 0L
@@ -194,7 +195,7 @@ class CircuitBreaker(
     suspend fun <T> execute(operation: suspend () -> T): Result<T> {
         return when (state) {
             State.OPEN -> {
-                if (System.currentTimeMillis() - lastFailureTime > recoveryTimeMs) {
+                if (timeProvider() - lastFailureTime > recoveryTimeMs) {
                     state = State.HALF_OPEN
                     log.info { "Circuit breaker transitioning to HALF_OPEN state" }
                     executeOperation(operation)
@@ -230,7 +231,7 @@ class CircuitBreaker(
 
     private fun onFailure() {
         failureCount++
-        lastFailureTime = System.currentTimeMillis()
+        lastFailureTime = timeProvider()
 
         if (failureCount >= failureThreshold) {
             state = State.OPEN
