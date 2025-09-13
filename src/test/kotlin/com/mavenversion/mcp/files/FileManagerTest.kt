@@ -7,7 +7,6 @@ import kotlin.test.Test
  * Will be implemented in tasks 7-9
  */
 class FileManagerTest {
-    
     @Test
     fun placeholder() {
         // Test implementations will be added in tasks 7-9

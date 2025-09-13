@@ -12,13 +12,13 @@ import org.assertj.core.api.Assertions.assertThat
  * Unit tests for data models including serialization and validation
  */
 class DataModelsTest {
-    
+
     private val json = Json { prettyPrint = true }
-    
+
     @Nested
     @DisplayName("Dependency Tests")
     inner class DependencyTests {
-        
+
         @Test
         @DisplayName("Should serialize and deserialize dependency with all fields")
         fun testDependencySerialization() {
@@ -28,17 +28,17 @@ class DataModelsTest {
                 description = "Spring Core Framework",
                 url = "https://spring.io"
             )
-            
+
             val jsonString = json.encodeToString(dependency)
             val deserializedDependency = json.decodeFromString<Dependency>(jsonString)
-            
+
             assertThat(deserializedDependency).isEqualTo(dependency)
             assertThat(deserializedDependency.groupId).isEqualTo("org.springframework")
             assertThat(deserializedDependency.artifactId).isEqualTo("spring-core")
             assertThat(deserializedDependency.description).isEqualTo("Spring Core Framework")
             assertThat(deserializedDependency.url).isEqualTo("https://spring.io")
         }
-        
+
         @Test
         @DisplayName("Should handle null optional fields correctly")
         fun testDependencyWithNullValues() {
@@ -46,10 +46,10 @@ class DataModelsTest {
                 groupId = "com.example",
                 artifactId = "test-lib"
             )
-            
+
             val jsonString = json.encodeToString(dependency)
             val deserializedDependency = json.decodeFromString<Dependency>(jsonString)
-            
+
             assertThat(deserializedDependency).isEqualTo(dependency)
             assertThat(deserializedDependency.groupId).isEqualTo("com.example")
             assertThat(deserializedDependency.artifactId).isEqualTo("test-lib")
@@ -57,11 +57,11 @@ class DataModelsTest {
             assertThat(deserializedDependency.url).isNull()
         }
     }
-    
+
     @Nested
     @DisplayName("Version Tests")
     inner class VersionTests {
-        
+
         @Test
         @DisplayName("Should serialize and deserialize version with all fields")
         fun testVersionSerialization() {
@@ -72,10 +72,10 @@ class DataModelsTest {
                 downloads = 1000000L,
                 vulnerabilities = 0
             )
-            
+
             val jsonString = json.encodeToString(version)
             val deserializedVersion = json.decodeFromString<Version>(jsonString)
-            
+
             assertThat(deserializedVersion).isEqualTo(version)
             assertThat(deserializedVersion.version).isEqualTo("1.2.3")
             assertThat(deserializedVersion.releaseDate).isEqualTo("2023-12-01")
@@ -83,15 +83,15 @@ class DataModelsTest {
             assertThat(deserializedVersion.downloads).isEqualTo(1000000L)
             assertThat(deserializedVersion.vulnerabilities).isEqualTo(0)
         }
-        
+
         @Test
         @DisplayName("Should handle default values correctly")
         fun testVersionWithDefaults() {
             val version = Version(version = "2.0.0")
-            
+
             val jsonString = json.encodeToString(version)
             val deserializedVersion = json.decodeFromString<Version>(jsonString)
-            
+
             assertThat(deserializedVersion).isEqualTo(version)
             assertThat(deserializedVersion.version).isEqualTo("2.0.0")
             assertThat(deserializedVersion.releaseDate).isNull()
@@ -99,63 +99,65 @@ class DataModelsTest {
             assertThat(deserializedVersion.downloads).isNull()
             assertThat(deserializedVersion.vulnerabilities).isNull()
         }
-        
+
         @Test
         @DisplayName("Should compare semantic versions correctly")
+        @Suppress("ktlint:standard:property-naming")
         fun testVersionComparison() {
-            val v1_0_0 = Version("1.0.0")
-            val v1_0_1 = Version("1.0.1")
-            val v1_1_0 = Version("1.1.0")
-            val v2_0_0 = Version("2.0.0")
-            
-            assertThat(v1_0_0).isLessThan(v1_0_1)
-            assertThat(v1_0_1).isLessThan(v1_1_0)
-            assertThat(v1_1_0).isLessThan(v2_0_0)
-            assertThat(v2_0_0).isGreaterThan(v1_0_0)
-            assertThat(v1_0_0.compareTo(Version("1.0.0"))).isEqualTo(0)
+            val versionOneZeroZero = Version("1.0.0")
+            val versionOneZeroOne = Version("1.0.1")
+            val versionOneOneZero = Version("1.1.0")
+            val versionTwoZeroZero = Version("2.0.0")
+
+            assertThat(versionOneZeroZero).isLessThan(versionOneZeroOne)
+            assertThat(versionOneZeroOne).isLessThan(versionOneOneZero)
+            assertThat(versionOneOneZero).isLessThan(versionTwoZeroZero)
+            assertThat(versionTwoZeroZero).isGreaterThan(versionOneZeroZero)
+            assertThat(versionOneZeroZero.compareTo(Version("1.0.0"))).isEqualTo(0)
         }
-        
+
         @Test
         @DisplayName("Should handle versions with different lengths")
+        @Suppress("ktlint:standard:property-naming")
         fun testVersionComparisonWithDifferentLengths() {
-            val v1_0 = Version("1.0")
-            val v1_0_0 = Version("1.0.0")
-            val v1_0_1 = Version("1.0.1")
-            
-            assertThat(v1_0.compareTo(v1_0_0)).isEqualTo(0) // 1.0 == 1.0.0
-            assertThat(v1_0).isLessThan(v1_0_1) // 1.0 < 1.0.1
-            assertThat(v1_0_0).isLessThan(v1_0_1) // 1.0.0 < 1.0.1
+            val versionOneZero = Version("1.0")
+            val versionOneZeroZero = Version("1.0.0")
+            val versionOneZeroOne = Version("1.0.1")
+
+            assertThat(versionOneZero.compareTo(versionOneZeroZero)).isEqualTo(0) // 1.0 == 1.0.0
+            assertThat(versionOneZero).isLessThan(versionOneZeroOne) // 1.0 < 1.0.1
+            assertThat(versionOneZeroZero).isLessThan(versionOneZeroOne) // 1.0.0 < 1.0.1
         }
-        
+
         @Test
         @DisplayName("Should handle version prefixes")
         fun testVersionComparisonWithPrefixes() {
             val v1 = Version("v1.2.3")
             val v2 = Version("1.2.4")
-            
+
             assertThat(v1).isLessThan(v2)
         }
-        
+
         @Test
         @DisplayName("Should handle snapshot versions")
         fun testVersionComparisonWithSnapshots() {
             val v1 = Version("1.2.3-SNAPSHOT")
             val v2 = Version("1.2.3")
-            
+
             // Snapshot versions should be treated as the base version for comparison
             assertThat(v1.compareTo(v2)).isEqualTo(0)
         }
-        
+
         @Test
         @DisplayName("Should fall back to string comparison for non-semantic versions")
         fun testVersionComparisonNonSemantic() {
             val v1 = Version("release-2023-12")
             val v2 = Version("release-2024-01")
-            
+
             // Non-semantic versions fall back to string comparison
             assertThat(v1).isLessThan(v2)
         }
-        
+
         @Test
         @DisplayName("Should provide static version comparison method")
         fun testVersionCompareVersionsStaticMethod() {
@@ -166,11 +168,11 @@ class DataModelsTest {
             assertThat(Version.compareVersions("2.0.0", "1.9.9")).isPositive()
         }
     }
-    
+
     @Nested
     @DisplayName("UpdateResult Tests")
     inner class UpdateResultTests {
-        
+
         @Test
         @DisplayName("Should serialize and deserialize update result with all fields")
         fun testUpdateResultSerialization() {
@@ -182,10 +184,10 @@ class DataModelsTest {
                 newVersion = "1.1.0",
                 wasAdded = false
             )
-            
+
             val jsonString = json.encodeToString(updateResult)
             val deserializedResult = json.decodeFromString<UpdateResult>(jsonString)
-            
+
             assertThat(deserializedResult).isEqualTo(updateResult)
             assertThat(deserializedResult.success).isTrue()
             assertThat(deserializedResult.message).isEqualTo("Dependency updated successfully")
@@ -194,7 +196,7 @@ class DataModelsTest {
             assertThat(deserializedResult.newVersion).isEqualTo("1.1.0")
             assertThat(deserializedResult.wasAdded).isFalse()
         }
-        
+
         @Test
         @DisplayName("Should handle default values correctly")
         fun testUpdateResultWithDefaults() {
@@ -203,10 +205,10 @@ class DataModelsTest {
                 message = "File not found",
                 filePath = "/path/to/build.gradle"
             )
-            
+
             val jsonString = json.encodeToString(updateResult)
             val deserializedResult = json.decodeFromString<UpdateResult>(jsonString)
-            
+
             assertThat(deserializedResult).isEqualTo(updateResult)
             assertThat(deserializedResult.success).isFalse()
             assertThat(deserializedResult.message).isEqualTo("File not found")
@@ -215,7 +217,7 @@ class DataModelsTest {
             assertThat(deserializedResult.newVersion).isNull()
             assertThat(deserializedResult.wasAdded).isFalse()
         }
-        
+
         @Test
         @DisplayName("Should handle new dependency addition")
         fun testUpdateResultForNewDependency() {
@@ -227,10 +229,10 @@ class DataModelsTest {
                 newVersion = "2.0.0",
                 wasAdded = true
             )
-            
+
             val jsonString = json.encodeToString(updateResult)
             val deserializedResult = json.decodeFromString<UpdateResult>(jsonString)
-            
+
             assertThat(deserializedResult).isEqualTo(updateResult)
             assertThat(deserializedResult.success).isTrue()
             assertThat(deserializedResult.message).isEqualTo("New dependency added")
@@ -239,11 +241,11 @@ class DataModelsTest {
             assertThat(deserializedResult.wasAdded).isTrue()
         }
     }
-    
+
     @Nested
     @DisplayName("SearchResult Tests")
     inner class SearchResultTests {
-        
+
         @Test
         @DisplayName("Should serialize and deserialize search result with dependencies")
         fun testSearchResultSerialization() {
@@ -251,16 +253,16 @@ class DataModelsTest {
                 Dependency("org.springframework", "spring-core", "Spring Core"),
                 Dependency("org.springframework", "spring-web", "Spring Web")
             )
-            
+
             val searchResult = SearchResult(
                 dependencies = dependencies,
                 totalResults = 2,
                 query = "spring"
             )
-            
+
             val jsonString = json.encodeToString(searchResult)
             val deserializedResult = json.decodeFromString<SearchResult>(jsonString)
-            
+
             assertThat(deserializedResult).isEqualTo(searchResult)
             assertThat(deserializedResult.dependencies).hasSize(2)
             assertThat(deserializedResult.totalResults).isEqualTo(2)
@@ -268,7 +270,7 @@ class DataModelsTest {
             assertThat(deserializedResult.dependencies[0].groupId).isEqualTo("org.springframework")
             assertThat(deserializedResult.dependencies[0].artifactId).isEqualTo("spring-core")
         }
-        
+
         @Test
         @DisplayName("Should handle empty search results")
         fun testSearchResultEmpty() {
@@ -277,21 +279,21 @@ class DataModelsTest {
                 totalResults = 0,
                 query = "nonexistent"
             )
-            
+
             val jsonString = json.encodeToString(searchResult)
             val deserializedResult = json.decodeFromString<SearchResult>(jsonString)
-            
+
             assertThat(deserializedResult).isEqualTo(searchResult)
             assertThat(deserializedResult.dependencies).isEmpty()
             assertThat(deserializedResult.totalResults).isEqualTo(0)
             assertThat(deserializedResult.query).isEqualTo("nonexistent")
         }
     }
-    
+
     @Nested
     @DisplayName("Data Model Validation Tests")
     inner class ValidationTests {
-        
+
         @Test
         @DisplayName("Should handle empty string values in data models")
         fun testDataModelValidation() {
@@ -299,15 +301,15 @@ class DataModelsTest {
             val dependency = Dependency("", "")
             assertThat(dependency.groupId).isEmpty()
             assertThat(dependency.artifactId).isEmpty()
-            
+
             val version = Version("")
             assertThat(version.version).isEmpty()
-            
+
             val updateResult = UpdateResult(true, "", "")
             assertThat(updateResult.success).isTrue()
             assertThat(updateResult.message).isEmpty()
             assertThat(updateResult.filePath).isEmpty()
-            
+
             val searchResult = SearchResult(emptyList(), 0, "")
             assertThat(searchResult.dependencies).isEmpty()
             assertThat(searchResult.totalResults).isEqualTo(0)
