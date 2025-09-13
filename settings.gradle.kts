@@ -1,0 +1,1 @@
+rootProject.name = "maven-version-mcp-server"
