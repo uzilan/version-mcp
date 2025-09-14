@@ -22,7 +22,7 @@ class SearchDependencyToolTest {
     @BeforeEach
     fun setUp() {
         mockMavenRepositoryClient = mockk()
-        searchDependencyTool = SearchDependencyTool(mockMavenRepositoryClient)
+        searchDependencyTool = SearchDependencyTool(mockMavenRepositoryClient, mockk(), mockk())
     }
 
     @Nested

@@ -25,6 +25,8 @@ class UpdateMavenDependencyTool(
     private val mavenRepositoryClient: MavenRepositoryClient,
     private val projectFileDetector: ProjectFileDetector,
     private val mavenFileManager: MavenFileManager,
+    private val errorHandlingService: com.mavenversion.mcp.service.ErrorHandlingService,
+    private val errorRecoveryService: com.mavenversion.mcp.recovery.ErrorRecoveryService,
 ) : MCPToolInterface {
     /**
      * Get the MCP tool definition

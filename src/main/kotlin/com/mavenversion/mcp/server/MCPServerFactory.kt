@@ -6,6 +6,7 @@ import com.mavenversion.mcp.config.ApplicationConfig
 import com.mavenversion.mcp.files.GradleFileManager
 import com.mavenversion.mcp.files.MavenFileManager
 import com.mavenversion.mcp.files.ProjectFileDetector
+import com.mavenversion.mcp.recovery.ErrorRecoveryService
 import com.mavenversion.mcp.reliability.ReliabilityService
 import com.mavenversion.mcp.service.ErrorHandlingService
 import com.mavenversion.mcp.tools.GetAllVersionsTool
@@ -36,6 +37,8 @@ class MCPServerFactory {
             val mavenFileManager = MavenFileManager()
             val gradleFileManager = GradleFileManager()
             val errorHandlingService = ErrorHandlingService()
+            val loggingService = com.mavenversion.mcp.logging.StructuredLoggingService()
+            val errorRecoveryService = ErrorRecoveryService(loggingService)
 
             // Create MCP client components with configuration
             val mcpProcessManager = MCPProcessManager()
@@ -53,11 +56,25 @@ class MCPServerFactory {
                 )
 
             // Create and register all tools
-            val searchTool = SearchDependencyTool(mavenRepositoryClient)
-            val getLatestVersionTool = GetLatestVersionTool(mavenRepositoryClient)
-            val getAllVersionsTool = GetAllVersionsTool(mavenRepositoryClient)
-            val updateMavenTool = UpdateMavenDependencyTool(mavenRepositoryClient, projectFileDetector, mavenFileManager)
-            val updateGradleTool = UpdateGradleDependencyTool(mavenRepositoryClient, projectFileDetector, gradleFileManager)
+            val searchTool = SearchDependencyTool(mavenRepositoryClient, loggingService, errorRecoveryService)
+            val getLatestVersionTool = GetLatestVersionTool(mavenRepositoryClient, loggingService, errorRecoveryService)
+            val getAllVersionsTool = GetAllVersionsTool(mavenRepositoryClient, loggingService, errorRecoveryService)
+            val updateMavenTool =
+                UpdateMavenDependencyTool(
+                    mavenRepositoryClient,
+                    projectFileDetector,
+                    mavenFileManager,
+                    errorHandlingService,
+                    errorRecoveryService,
+                )
+            val updateGradleTool =
+                UpdateGradleDependencyTool(
+                    mavenRepositoryClient,
+                    projectFileDetector,
+                    gradleFileManager,
+                    errorHandlingService,
+                    errorRecoveryService,
+                )
 
             // Register tools with the registry
             toolRegistry.registerTool(searchTool)

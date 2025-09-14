@@ -21,7 +21,7 @@ class GetLatestVersionToolTest {
     @BeforeEach
     fun setUp() {
         mockMavenRepositoryClient = mockk()
-        getLatestVersionTool = GetLatestVersionTool(mockMavenRepositoryClient)
+        getLatestVersionTool = GetLatestVersionTool(mockMavenRepositoryClient, mockk(), mockk())
     }
 
     @Nested

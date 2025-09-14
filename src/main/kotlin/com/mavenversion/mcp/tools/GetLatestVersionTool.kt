@@ -20,6 +20,8 @@ private val log = KotlinLogging.logger {}
  */
 class GetLatestVersionTool(
     private val mavenRepositoryClient: MavenRepositoryClient,
+    private val loggingService: com.mavenversion.mcp.logging.StructuredLoggingService,
+    private val errorRecoveryService: com.mavenversion.mcp.recovery.ErrorRecoveryService,
 ) : MCPToolInterface {
     /**
      * Get the MCP tool definition

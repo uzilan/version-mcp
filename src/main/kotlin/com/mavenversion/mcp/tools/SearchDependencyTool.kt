@@ -6,7 +6,12 @@ import com.mavenversion.mcp.client.MCPSchema
 import com.mavenversion.mcp.client.MCPTool
 import com.mavenversion.mcp.client.MCPToolRequest
 import com.mavenversion.mcp.client.MCPToolResponse
+import com.mavenversion.mcp.errors.ErrorCodes
+import com.mavenversion.mcp.errors.ErrorTypes
+import com.mavenversion.mcp.errors.createStructuredErrorResponse
+import com.mavenversion.mcp.logging.StructuredLoggingService
 import com.mavenversion.mcp.models.SearchResult
+import com.mavenversion.mcp.recovery.ErrorRecoveryService
 import com.mavenversion.mcp.server.MCPToolInterface
 import com.mavenversion.mcp.web.MavenRepositoryClient
 import kotlinx.serialization.json.jsonPrimitive
@@ -20,6 +25,8 @@ private val log = KotlinLogging.logger {}
  */
 class SearchDependencyTool(
     private val mavenRepositoryClient: MavenRepositoryClient,
+    private val loggingService: StructuredLoggingService,
+    private val errorRecoveryService: ErrorRecoveryService,
 ) : MCPToolInterface {
     /**
      * Get the MCP tool definition
@@ -53,8 +60,19 @@ class SearchDependencyTool(
      * Execute the search dependency tool
      */
     override suspend fun execute(request: MCPToolRequest): MCPToolResponse {
+        val requestId = loggingService.generateRequestId()
+        val startTime = System.currentTimeMillis()
+
         return try {
-            log.debug { "Executing search dependency tool with request: $request" }
+            loggingService.logToolStart(
+                toolName = "search_dependency",
+                operation = "execute",
+                parameters =
+                    mapOf(
+                        "query" to (request.arguments["query"]?.jsonPrimitive?.content ?: "null"),
+                        "limit" to (request.arguments["limit"]?.jsonPrimitive?.content ?: "null"),
+                    ),
+            )
 
             // Validate and extract parameters
             val query = extractStringParameter(request, "query")
@@ -63,17 +81,94 @@ class SearchDependencyTool(
             // Validate parameters
             validateParameters(query, limit)
 
-            // Perform the search
-            val searchResult = performSearch(query, limit)
+            // Perform the search with error recovery
+            val searchResult =
+                errorRecoveryService.executeWithRetry(
+                    operation = "search_dependency",
+                    maxRetries = 3,
+                    baseDelayMs = 1000,
+                ) {
+                    performSearch(query, limit)
+                }
+
+            val duration = System.currentTimeMillis() - startTime
+            loggingService.logToolSuccess(
+                toolName = "search_dependency",
+                operation = "execute",
+                duration = duration,
+                resultSummary = "Found ${searchResult.dependencies.size} dependencies",
+            )
 
             // Format response
             formatSuccessResponse(searchResult)
         } catch (e: IllegalArgumentException) {
-            log.warn { "Invalid parameters for search dependency tool: ${e.message}" }
-            formatErrorResponse("Invalid parameters: ${e.message}")
+            val duration = System.currentTimeMillis() - startTime
+            loggingService.logToolError(
+                toolName = "search_dependency",
+                operation = "execute",
+                error = e,
+                duration = duration,
+            )
+
+            createStructuredErrorResponse("search_dependency", "execute")
+                .errorCode(ErrorCodes.INVALID_PARAMETER)
+                .errorType(ErrorTypes.VALIDATION_ERROR)
+                .message("Invalid parameters: ${e.message}")
+                .userMessage("Please check your search parameters and try again")
+                .parameter("query", request.arguments["query"]?.jsonPrimitive?.content ?: "null")
+                .parameter("limit", request.arguments["limit"]?.jsonPrimitive?.content ?: "null")
+                .requestId(requestId)
+                .build()
+        } catch (e: java.net.UnknownHostException) {
+            val duration = System.currentTimeMillis() - startTime
+            loggingService.logToolError(
+                toolName = "search_dependency",
+                operation = "execute",
+                error = e,
+                duration = duration,
+            )
+
+            createStructuredErrorResponse("search_dependency", "execute")
+                .errorCode(ErrorCodes.HOST_UNREACHABLE)
+                .errorType(ErrorTypes.NETWORK_ERROR)
+                .message("Unable to connect to mvnrepository.com")
+                .userMessage("Please check your internet connection and try again")
+                .detail("host", "mvnrepository.com")
+                .requestId(requestId)
+                .build()
+        } catch (e: java.util.concurrent.TimeoutException) {
+            val duration = System.currentTimeMillis() - startTime
+            loggingService.logToolError(
+                toolName = "search_dependency",
+                operation = "execute",
+                error = e,
+                duration = duration,
+            )
+
+            createStructuredErrorResponse("search_dependency", "execute")
+                .errorCode(ErrorCodes.CONNECTION_TIMEOUT)
+                .errorType(ErrorTypes.NETWORK_ERROR)
+                .message("Search request timed out")
+                .userMessage("The search is taking longer than expected. Please try again.")
+                .requestId(requestId)
+                .build()
         } catch (e: Exception) {
-            log.error(e) { "Error executing search dependency tool" }
-            formatErrorResponse("Search failed: ${e.message}")
+            val duration = System.currentTimeMillis() - startTime
+            loggingService.logToolError(
+                toolName = "search_dependency",
+                operation = "execute",
+                error = e,
+                duration = duration,
+            )
+
+            createStructuredErrorResponse("search_dependency", "execute")
+                .errorCode(ErrorCodes.INTERNAL_ERROR)
+                .errorType(ErrorTypes.INTERNAL_ERROR)
+                .message("Search failed: ${e.message}")
+                .userMessage("An unexpected error occurred while searching. Please try again.")
+                .detail("errorType", e.javaClass.simpleName)
+                .requestId(requestId)
+                .build()
         }
     }
 
