@@ -46,7 +46,7 @@
   - Write integration tests for reliability features with Playwright MCP
   - _Requirements: 7.2, 7.3, 7.4_
 
-- [ ] 6.5. Refactor MCP client architecture to use stdio-based communication
+- [x] 6.5. Refactor MCP client architecture to use stdio-based communication
   - Replace HTTP-based MCP client with proper stdio-based MCP protocol implementation
   - Implement subprocess management for launching Playwright MCP server via npx/uvx
   - Create proper MCP protocol message serialization/deserialization over stdin/stdout
@@ -59,7 +59,7 @@
   - Update configuration to specify MCP server command and arguments
   - _Requirements: 6.1, 6.2, 7.1, 7.5_
 
-- [ ] 7. Implement project file detection
+- [x] 7. Implement project file detection
   - Create ProjectFileDetector to identify Maven vs Gradle projects
   - Implement file system scanning for pom.xml and build.gradle files
   - Add file accessibility and permission validation
@@ -67,7 +67,7 @@
   - Write unit tests for file detection logic
   - _Requirements: 4.1, 5.1_
 
-- [ ] 8. Implement Maven file management
+- [x] 8. Implement Maven file management
   - Create MavenFileManager for pom.xml operations
   - Implement XML parsing and dependency extraction
   - Add dependency version update logic preserving XML formatting
