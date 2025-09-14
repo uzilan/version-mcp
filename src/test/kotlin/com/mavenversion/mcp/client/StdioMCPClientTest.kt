@@ -65,7 +65,8 @@ class StdioMCPClientTest {
             runTest {
                 val client =
                     StdioMCPClient(
-                        command = listOf("false"), // Command that exits with error
+                        // Command that exits with error
+                        command = listOf("false"),
                         workingDirectory = null,
                     )
 

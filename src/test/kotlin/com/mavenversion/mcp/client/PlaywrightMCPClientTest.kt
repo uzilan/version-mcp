@@ -21,7 +21,8 @@ class PlaywrightMCPClientTest {
         val config =
             MCPServerConfig(
                 name = "test-playwright",
-                command = listOf("echo", "test"), // Invalid MCP server for testing
+                // Invalid MCP server for testing
+                command = listOf("echo", "test"),
                 autoRestart = false,
             )
         playwrightClient = PlaywrightMCPClient(config, processManager)

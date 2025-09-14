@@ -215,7 +215,8 @@ class StdioMCPIntegrationTest {
                 val config =
                     MCPServerConfig(
                         name = "cleanup-test",
-                        command = listOf("false"), // Command that exits immediately with error
+                        // Command that exits immediately with error
+                        command = listOf("false"),
                         autoRestart = false,
                     )
 
