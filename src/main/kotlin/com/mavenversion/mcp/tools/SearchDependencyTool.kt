@@ -7,6 +7,7 @@ import com.mavenversion.mcp.client.MCPTool
 import com.mavenversion.mcp.client.MCPToolRequest
 import com.mavenversion.mcp.client.MCPToolResponse
 import com.mavenversion.mcp.models.SearchResult
+import com.mavenversion.mcp.server.MCPToolInterface
 import com.mavenversion.mcp.web.MavenRepositoryClient
 import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
@@ -19,11 +20,11 @@ private val log = KotlinLogging.logger {}
  */
 class SearchDependencyTool(
     private val mavenRepositoryClient: MavenRepositoryClient,
-) {
+) : MCPToolInterface {
     /**
      * Get the MCP tool definition
      */
-    fun getToolDefinition(): MCPTool {
+    override fun getToolDefinition(): MCPTool {
         return MCPTool(
             name = "search_dependency",
             description = "Search for Java dependencies by name on mvnrepository.com",
@@ -51,7 +52,7 @@ class SearchDependencyTool(
     /**
      * Execute the search dependency tool
      */
-    suspend fun execute(request: MCPToolRequest): MCPToolResponse {
+    override suspend fun execute(request: MCPToolRequest): MCPToolResponse {
         return try {
             log.debug { "Executing search dependency tool with request: $request" }
 

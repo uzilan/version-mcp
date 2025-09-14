@@ -1,6 +1,7 @@
 package com.mavenversion.mcp
 
 import com.mavenversion.mcp.examples.MCPPlaywrightExample
+import com.mavenversion.mcp.server.MCPServerFactory
 import mu.KotlinLogging
 
 private val log = KotlinLogging.logger {}
@@ -14,6 +15,17 @@ fun main(args: Array<String>) {
         MCPPlaywrightExample.main(emptyArray())
     } else {
         log.info { "Maven Version MCP Server starting..." }
-        // Server initialization will be implemented in later tasks
+
+        try {
+            // Create and start the MCP server
+            val serverFactory = MCPServerFactory()
+            val server = serverFactory.createServer()
+
+            log.info { "Starting MCP server..." }
+            server.runBlocking()
+        } catch (e: Exception) {
+            log.error(e) { "Failed to start MCP server" }
+            System.exit(1)
+        }
     }
 }

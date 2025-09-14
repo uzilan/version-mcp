@@ -9,6 +9,7 @@ import com.mavenversion.mcp.client.MCPToolResponse
 import com.mavenversion.mcp.files.GradleFileManager
 import com.mavenversion.mcp.files.ProjectFileDetector
 import com.mavenversion.mcp.models.UpdateResult
+import com.mavenversion.mcp.server.MCPToolInterface
 import com.mavenversion.mcp.web.MavenRepositoryClient
 import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
@@ -24,11 +25,11 @@ class UpdateGradleDependencyTool(
     private val mavenRepositoryClient: MavenRepositoryClient,
     private val projectFileDetector: ProjectFileDetector,
     private val gradleFileManager: GradleFileManager,
-) {
+) : MCPToolInterface {
     /**
      * Get the MCP tool definition
      */
-    fun getToolDefinition(): MCPTool {
+    override fun getToolDefinition(): MCPTool {
         return MCPTool(
             name = "update_gradle_dependency",
             description = "Update or add a Gradle dependency in a build.gradle or build.gradle.kts file",
@@ -78,7 +79,7 @@ class UpdateGradleDependencyTool(
     /**
      * Execute the update Gradle dependency tool
      */
-    suspend fun execute(request: MCPToolRequest): MCPToolResponse {
+    override suspend fun execute(request: MCPToolRequest): MCPToolResponse {
         return try {
             log.debug { "Executing update Gradle dependency tool with request: $request" }
 

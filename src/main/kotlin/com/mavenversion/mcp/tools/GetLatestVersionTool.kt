@@ -7,6 +7,7 @@ import com.mavenversion.mcp.client.MCPTool
 import com.mavenversion.mcp.client.MCPToolRequest
 import com.mavenversion.mcp.client.MCPToolResponse
 import com.mavenversion.mcp.models.Version
+import com.mavenversion.mcp.server.MCPToolInterface
 import com.mavenversion.mcp.web.MavenRepositoryClient
 import kotlinx.serialization.json.jsonPrimitive
 import mu.KotlinLogging
@@ -19,11 +20,11 @@ private val log = KotlinLogging.logger {}
  */
 class GetLatestVersionTool(
     private val mavenRepositoryClient: MavenRepositoryClient,
-) {
+) : MCPToolInterface {
     /**
      * Get the MCP tool definition
      */
-    fun getToolDefinition(): MCPTool {
+    override fun getToolDefinition(): MCPTool {
         return MCPTool(
             name = "get_latest_version",
             description = "Get the latest version of a specific Maven dependency from mvnrepository.com",
@@ -51,7 +52,7 @@ class GetLatestVersionTool(
     /**
      * Execute the get latest version tool
      */
-    suspend fun execute(request: MCPToolRequest): MCPToolResponse {
+    override suspend fun execute(request: MCPToolRequest): MCPToolResponse {
         return try {
             log.debug { "Executing get latest version tool with request: $request" }
 
