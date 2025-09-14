@@ -17,7 +17,7 @@ fun main(args: Array<String>) {
                 ApplicationConfig.printUsage()
                 return
             } else {
-                ApplicationConfig.fromArgs(args)
+                ApplicationConfig.load(args)
             }
 
         // Create and start the application service

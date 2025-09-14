@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "maven-version": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "maven-version-mcp-server.jar"
+      ],
+      "env": {
+        "MCP_LOG_LEVEL": "INFO",
+        "MCP_ENABLE_HEALTH_CHECK": "true",
+        "MCP_ENABLE_METRICS": "false"
+      }
+    }
+  }
+}

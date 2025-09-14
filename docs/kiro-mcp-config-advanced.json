@@ -1,0 +1,35 @@
+{
+  "mcpServers": {
+    "maven-version": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "maven-version-mcp-server.jar",
+        "--log-level",
+        "DEBUG",
+        "--enable-metrics",
+        "true",
+        "--enable-health-check",
+        "true"
+      ],
+      "env": {
+        "MCP_LOG_LEVEL": "DEBUG",
+        "MCP_WORKING_DIR": "/opt/mcp-server",
+        "MCP_BASE_URL": "https://mvnrepository.com",
+        "MCP_MAX_RETRIES": "5",
+        "MCP_RETRY_DELAY": "2000",
+        "MCP_RATE_LIMIT_DELAY": "1000",
+        "MCP_CIRCUIT_BREAKER_THRESHOLD": "3",
+        "MCP_CIRCUIT_BREAKER_TIMEOUT": "30000",
+        "MCP_REQUEST_TIMEOUT": "60000",
+        "MCP_STRUCTURED_LOGGING": "true",
+        "MCP_LOG_TO_FILE": "true",
+        "MCP_LOG_FILE": "logs/maven-version-mcp-server.log",
+        "MCP_ENABLE_METRICS": "true",
+        "MCP_METRICS_PORT": "8081",
+        "MCP_ENABLE_HEALTH_CHECK": "true",
+        "MCP_HEALTH_CHECK_PORT": "8082"
+      }
+    }
+  }
+}

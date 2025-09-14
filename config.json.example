@@ -1,0 +1,28 @@
+{
+  "serverName": "maven-version-mcp-server",
+  "serverVersion": "1.0.0",
+  "protocolVersion": "2024-11-05",
+  "logLevel": "INFO",
+  "enableExamples": false,
+  "mcpServerCommand": [
+    "npx",
+    "@modelcontextprotocol/server-playwright"
+  ],
+  "workingDirectory": null,
+  "baseUrl": "https://mvnrepository.com",
+  "maxRetries": 3,
+  "retryDelayMs": 1000,
+  "rateLimitDelayMs": 500,
+  "circuitBreakerFailureThreshold": 5,
+  "circuitBreakerRecoveryTimeoutMs": 60000,
+  "requestTimeoutMs": 30000,
+  "enableStructuredLogging": true,
+  "logToFile": false,
+  "logFile": "logs/maven-version-mcp-server.log",
+  "maxLogFileSize": "10MB",
+  "maxLogFiles": 5,
+  "enableMetrics": false,
+  "metricsPort": 8081,
+  "enableHealthCheck": true,
+  "healthCheckPort": 8082
+}
