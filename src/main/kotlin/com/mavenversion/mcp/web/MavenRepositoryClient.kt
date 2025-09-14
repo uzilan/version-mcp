@@ -44,7 +44,9 @@ class MavenRepositoryClient(
                 retryableExceptions = setOf(PlaywrightMCPException::class.java, Exception::class.java),
             ) {
                 log.debug { "Navigating to mvnrepository.com homepage" }
-                playwrightClient.navigateToUrl(baseUrl).getOrThrow()
+                val content = playwrightClient.navigateToUrl(baseUrl).getOrThrow()
+                
+                content
             }.getOrThrow()
         }
 
@@ -88,11 +90,17 @@ class MavenRepositoryClient(
                 try {
                     playwrightClient.waitForElement("input[name='q']", 5000).getOrThrow()
                 } catch (e: PlaywrightMCPException) {
-                    return@executeWithRetry reliabilityService.handleStructureChangeError(
-                        "search dependencies",
-                        "input[name='q']",
-                        e,
-                    ).getOrThrow()
+                    
+                    // Try waiting for search input again
+                    try {
+                        playwrightClient.waitForElement("input[name='q']", 3000).getOrThrow()
+                    } catch (e2: PlaywrightMCPException) {
+                        return@executeWithRetry reliabilityService.handleStructureChangeError(
+                            "search dependencies",
+                            "input[name='q']",
+                            e2,
+                        ).getOrThrow()
+                    }
                 }
 
                 // Fill search query

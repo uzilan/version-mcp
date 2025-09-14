@@ -120,15 +120,16 @@ class PlaywrightMCPClientTest {
             }
 
         @Test
-        @DisplayName("Should create wait for element request with timeout")
-        fun shouldCreateWaitForElementRequestWithTimeout() =
+        @DisplayName("Should skip wait for element (not supported by current MCP server)")
+        fun shouldSkipWaitForElement() =
             runTest {
                 val selector = ".loading-indicator"
                 val timeout = 10000L
 
                 val result = playwrightClient.waitForElement(selector, timeout)
 
-                assertThat(result.isFailure).isTrue()
+                // Wait functionality is currently skipped since browser_wait_for expects text, not selectors
+                assertThat(result.isSuccess).isTrue()
             }
     }
 
