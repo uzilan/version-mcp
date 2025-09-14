@@ -14,33 +14,36 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 class MCPIntegrationTest {
     @Test
     @DisplayName("Should create MCP client instances")
-    fun shouldCreateMCPClientInstances() = runTest {
-        val config = MCPServerConfig(
-            name = "test-playwright",
-            command = listOf("echo", "test"),
-            autoRestart = false
-        )
-        val processManager = MCPProcessManager()
-        val playwrightClient = PlaywrightMCPClient(config, processManager)
-        val mavenRepositoryClient = MavenRepositoryClient(playwrightClient)
+    fun shouldCreateMCPClientInstances() =
+        runTest {
+            val config =
+                MCPServerConfig(
+                    name = "test-playwright",
+                    command = listOf("echo", "test"),
+                    autoRestart = false,
+                )
+            val processManager = MCPProcessManager()
+            val playwrightClient = PlaywrightMCPClient(config, processManager)
+            val mavenRepositoryClient = MavenRepositoryClient(playwrightClient)
 
-        assertThat(playwrightClient).isNotNull()
-        assertThat(mavenRepositoryClient).isNotNull()
-        assertThat(playwrightClient.isConnected()).isFalse()
-        assertThat(mavenRepositoryClient.isConnected()).isFalse()
-        
-        processManager.stopAll()
-    }
+            assertThat(playwrightClient).isNotNull()
+            assertThat(mavenRepositoryClient).isNotNull()
+            assertThat(playwrightClient.isConnected()).isFalse()
+            assertThat(mavenRepositoryClient.isConnected()).isFalse()
+
+            processManager.stopAll()
+        }
 
     @Test
     @DisplayName("Should handle connection attempts gracefully")
     fun shouldHandleConnectionAttemptsGracefully() =
         runTest {
-            val config = MCPServerConfig(
-                name = "test-playwright",
-                command = listOf("echo", "test"),
-                autoRestart = false
-            )
+            val config =
+                MCPServerConfig(
+                    name = "test-playwright",
+                    command = listOf("echo", "test"),
+                    autoRestart = false,
+                )
             val processManager = MCPProcessManager()
             val playwrightClient = PlaywrightMCPClient(config, processManager)
             val mavenRepositoryClient = MavenRepositoryClient(playwrightClient)

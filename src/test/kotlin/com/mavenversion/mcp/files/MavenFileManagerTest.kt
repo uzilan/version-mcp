@@ -6,14 +6,12 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createFile
 import kotlin.io.path.writeText
 
 @DisplayName("MavenFileManager Tests")
 class MavenFileManagerTest {
-
     private lateinit var mavenFileManager: MavenFileManager
 
     @BeforeEach
@@ -24,10 +22,11 @@ class MavenFileManagerTest {
     @Nested
     @DisplayName("POM File Reading")
     inner class PomFileReadingTests {
-
         @Test
         @DisplayName("Should read valid POM file successfully")
-        fun shouldReadValidPomFileSuccessfully(@TempDir tempDir: Path) {
+        fun shouldReadValidPomFileSuccessfully(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("pom.xml").createFile()
             pomFile.writeText(createValidPomXml())
 
@@ -42,7 +41,9 @@ class MavenFileManagerTest {
 
         @Test
         @DisplayName("Should fail when POM file does not exist")
-        fun shouldFailWhenPomFileDoesNotExist(@TempDir tempDir: Path) {
+        fun shouldFailWhenPomFileDoesNotExist(
+            @TempDir tempDir: Path,
+        ) {
             val nonExistentPom = tempDir.resolve("nonexistent.xml")
 
             val result = mavenFileManager.readPomFile(nonExistentPom)
@@ -54,14 +55,18 @@ class MavenFileManagerTest {
 
         @Test
         @DisplayName("Should fail when POM has invalid structure")
-        fun shouldFailWhenPomHasInvalidStructure(@TempDir tempDir: Path) {
+        fun shouldFailWhenPomHasInvalidStructure(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("pom.xml").createFile()
-            pomFile.writeText("""
+            pomFile.writeText(
+                """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <invalid-root>
                     <groupId>com.example</groupId>
                 </invalid-root>
-            """.trimIndent())
+                """.trimIndent(),
+            )
 
             val result = mavenFileManager.readPomFile(pomFile)
 
@@ -72,16 +77,20 @@ class MavenFileManagerTest {
 
         @Test
         @DisplayName("Should fail when required elements are missing")
-        fun shouldFailWhenRequiredElementsAreMissing(@TempDir tempDir: Path) {
+        fun shouldFailWhenRequiredElementsAreMissing(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("pom.xml").createFile()
-            pomFile.writeText("""
+            pomFile.writeText(
+                """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <project xmlns="http://maven.apache.org/POM/4.0.0">
                     <modelVersion>4.0.0</modelVersion>
                     <groupId>com.example</groupId>
                     <!-- Missing artifactId and version -->
                 </project>
-            """.trimIndent())
+                """.trimIndent(),
+            )
 
             val result = mavenFileManager.readPomFile(pomFile)
 
@@ -94,10 +103,11 @@ class MavenFileManagerTest {
     @Nested
     @DisplayName("Dependency Extraction")
     inner class DependencyExtractionTests {
-
         @Test
         @DisplayName("Should extract dependencies from POM")
-        fun shouldExtractDependenciesFromPom(@TempDir tempDir: Path) {
+        fun shouldExtractDependenciesFromPom(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("pom.xml").createFile()
             pomFile.writeText(createPomWithDependencies())
 
@@ -105,13 +115,13 @@ class MavenFileManagerTest {
             val dependencies = mavenFileManager.extractDependencies(document)
 
             assertThat(dependencies).hasSize(2)
-            
+
             val junitDependency = dependencies.find { it.artifactId == "junit" }
             assertThat(junitDependency).isNotNull()
             assertThat(junitDependency!!.groupId).isEqualTo("junit")
             assertThat(junitDependency.version).isEqualTo("4.13.2")
             assertThat(junitDependency.scope).isEqualTo("test")
-            
+
             val mockitoDependency = dependencies.find { it.artifactId == "mockito-core" }
             assertThat(mockitoDependency).isNotNull()
             assertThat(mockitoDependency!!.groupId).isEqualTo("org.mockito")
@@ -120,7 +130,9 @@ class MavenFileManagerTest {
 
         @Test
         @DisplayName("Should extract dependencies from dependencyManagement section")
-        fun shouldExtractDependenciesFromDependencyManagement(@TempDir tempDir: Path) {
+        fun shouldExtractDependenciesFromDependencyManagement(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("pom.xml").createFile()
             pomFile.writeText(createPomWithDependencyManagement())
 
@@ -128,7 +140,7 @@ class MavenFileManagerTest {
             val dependencies = mavenFileManager.extractDependencies(document)
 
             assertThat(dependencies).hasSize(1)
-            
+
             val springDependency = dependencies.first()
             assertThat(springDependency.groupId).isEqualTo("org.springframework")
             assertThat(springDependency.artifactId).isEqualTo("spring-core")
@@ -137,7 +149,9 @@ class MavenFileManagerTest {
 
         @Test
         @DisplayName("Should handle POM with no dependencies")
-        fun shouldHandlePomWithNoDependencies(@TempDir tempDir: Path) {
+        fun shouldHandlePomWithNoDependencies(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("pom.xml").createFile()
             pomFile.writeText(createValidPomXml())
 
@@ -151,10 +165,11 @@ class MavenFileManagerTest {
     @Nested
     @DisplayName("Dependency Version Updates")
     inner class DependencyVersionUpdateTests {
-
         @Test
         @DisplayName("Should update dependency version successfully")
-        fun shouldUpdateDependencyVersionSuccessfully(@TempDir tempDir: Path) {
+        fun shouldUpdateDependencyVersionSuccessfully(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("pom.xml").createFile()
             pomFile.writeText(createPomWithDependencies())
 
@@ -171,7 +186,9 @@ class MavenFileManagerTest {
 
         @Test
         @DisplayName("Should update multiple instances of same dependency")
-        fun shouldUpdateMultipleInstancesOfSameDependency(@TempDir tempDir: Path) {
+        fun shouldUpdateMultipleInstancesOfSameDependency(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("pom.xml").createFile()
             pomFile.writeText(createPomWithMultipleDependencyInstances())
 
@@ -187,7 +204,9 @@ class MavenFileManagerTest {
 
         @Test
         @DisplayName("Should fail when dependency not found")
-        fun shouldFailWhenDependencyNotFound(@TempDir tempDir: Path) {
+        fun shouldFailWhenDependencyNotFound(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("pom.xml").createFile()
             pomFile.writeText(createPomWithDependencies())
 
@@ -204,20 +223,22 @@ class MavenFileManagerTest {
     @Nested
     @DisplayName("Dependency Addition")
     inner class DependencyAdditionTests {
-
         @Test
         @DisplayName("Should add new dependency successfully")
-        fun shouldAddNewDependencySuccessfully(@TempDir tempDir: Path) {
+        fun shouldAddNewDependencySuccessfully(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("pom.xml").createFile()
             pomFile.writeText(createValidPomXml())
 
             val document = mavenFileManager.readPomFile(pomFile).getOrThrow()
-            val newDependency = MavenFileManager.MavenDependency(
-                groupId = "org.apache.commons",
-                artifactId = "commons-lang3",
-                version = "3.12.0",
-                scope = "compile"
-            )
+            val newDependency =
+                MavenFileManager.MavenDependency(
+                    groupId = "org.apache.commons",
+                    artifactId = "commons-lang3",
+                    version = "3.12.0",
+                    scope = "compile",
+                )
 
             val result = mavenFileManager.addDependency(document, newDependency)
 
@@ -230,23 +251,26 @@ class MavenFileManagerTest {
 
         @Test
         @DisplayName("Should create dependencies section if it doesn't exist")
-        fun shouldCreateDependenciesSectionIfItDoesntExist(@TempDir tempDir: Path) {
+        fun shouldCreateDependenciesSectionIfItDoesntExist(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("pom.xml").createFile()
             pomFile.writeText(createValidPomXml())
 
             val document = mavenFileManager.readPomFile(pomFile).getOrThrow()
-            val newDependency = MavenFileManager.MavenDependency(
-                groupId = "org.apache.commons",
-                artifactId = "commons-lang3",
-                version = "3.12.0"
-            )
+            val newDependency =
+                MavenFileManager.MavenDependency(
+                    groupId = "org.apache.commons",
+                    artifactId = "commons-lang3",
+                    version = "3.12.0",
+                )
 
             val result = mavenFileManager.addDependency(document, newDependency)
 
             assertThat(result.isSuccess).isTrue()
             val operationResult = result.getOrThrow()
             assertThat(operationResult.success).isTrue()
-            
+
             // Verify dependencies section was created
             val dependenciesElement = document.rootElement.element("dependencies")
             assertThat(dependenciesElement).isNotNull()
@@ -254,16 +278,19 @@ class MavenFileManagerTest {
 
         @Test
         @DisplayName("Should fail when adding duplicate dependency")
-        fun shouldFailWhenAddingDuplicateDependency(@TempDir tempDir: Path) {
+        fun shouldFailWhenAddingDuplicateDependency(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("pom.xml").createFile()
             pomFile.writeText(createPomWithDependencies())
 
             val document = mavenFileManager.readPomFile(pomFile).getOrThrow()
-            val duplicateDependency = MavenFileManager.MavenDependency(
-                groupId = "junit",
-                artifactId = "junit",
-                version = "4.13.2"
-            )
+            val duplicateDependency =
+                MavenFileManager.MavenDependency(
+                    groupId = "junit",
+                    artifactId = "junit",
+                    version = "4.13.2",
+                )
 
             val result = mavenFileManager.addDependency(document, duplicateDependency)
 
@@ -277,10 +304,11 @@ class MavenFileManagerTest {
     @Nested
     @DisplayName("POM File Writing")
     inner class PomFileWritingTests {
-
         @Test
         @DisplayName("Should write POM file successfully")
-        fun shouldWritePomFileSuccessfully(@TempDir tempDir: Path) {
+        fun shouldWritePomFileSuccessfully(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("pom.xml").createFile()
             pomFile.writeText(createValidPomXml())
 
@@ -295,7 +323,9 @@ class MavenFileManagerTest {
 
         @Test
         @DisplayName("Should create backup when writing POM file")
-        fun shouldCreateBackupWhenWritingPomFile(@TempDir tempDir: Path) {
+        fun shouldCreateBackupWhenWritingPomFile(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("pom.xml").createFile()
             pomFile.writeText(createValidPomXml())
 
@@ -311,11 +341,16 @@ class MavenFileManagerTest {
 
         @Test
         @DisplayName("Should fail when parent directory does not exist")
-        fun shouldFailWhenParentDirectoryDoesNotExist(@TempDir tempDir: Path) {
+        fun shouldFailWhenParentDirectoryDoesNotExist(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("nonexistent/pom.xml")
-            val document = mavenFileManager.readPomFile(tempDir.resolve("pom.xml").apply { 
-                createFile().writeText(createValidPomXml()) 
-            }).getOrThrow()
+            val document =
+                mavenFileManager.readPomFile(
+                    tempDir.resolve("pom.xml").apply {
+                        createFile().writeText(createValidPomXml())
+                    },
+                ).getOrThrow()
 
             val result = mavenFileManager.writePomFile(document, pomFile)
 
@@ -328,42 +363,46 @@ class MavenFileManagerTest {
     @Nested
     @DisplayName("MavenDependency Data Class")
     inner class MavenDependencyDataClassTests {
-
         @Test
         @DisplayName("Should create dependency coordinate correctly")
         fun shouldCreateDependencyCoordinateCorrectly() {
-            val dependencyWithVersion = MavenFileManager.MavenDependency(
-                groupId = "junit",
-                artifactId = "junit",
-                version = "4.13.2"
-            )
+            val dependencyWithVersion =
+                MavenFileManager.MavenDependency(
+                    groupId = "junit",
+                    artifactId = "junit",
+                    version = "4.13.2",
+                )
             assertThat(dependencyWithVersion.getCoordinate()).isEqualTo("junit:junit:4.13.2")
 
-            val dependencyWithoutVersion = MavenFileManager.MavenDependency(
-                groupId = "junit",
-                artifactId = "junit"
-            )
+            val dependencyWithoutVersion =
+                MavenFileManager.MavenDependency(
+                    groupId = "junit",
+                    artifactId = "junit",
+                )
             assertThat(dependencyWithoutVersion.getCoordinate()).isEqualTo("junit:junit")
         }
 
         @Test
         @DisplayName("Should match dependencies correctly")
         fun shouldMatchDependenciesCorrectly() {
-            val dependency1 = MavenFileManager.MavenDependency(
-                groupId = "junit",
-                artifactId = "junit",
-                version = "4.13.2"
-            )
-            val dependency2 = MavenFileManager.MavenDependency(
-                groupId = "junit",
-                artifactId = "junit",
-                version = "4.14.0"
-            )
-            val dependency3 = MavenFileManager.MavenDependency(
-                groupId = "org.mockito",
-                artifactId = "mockito-core",
-                version = "4.6.1"
-            )
+            val dependency1 =
+                MavenFileManager.MavenDependency(
+                    groupId = "junit",
+                    artifactId = "junit",
+                    version = "4.13.2",
+                )
+            val dependency2 =
+                MavenFileManager.MavenDependency(
+                    groupId = "junit",
+                    artifactId = "junit",
+                    version = "4.14.0",
+                )
+            val dependency3 =
+                MavenFileManager.MavenDependency(
+                    groupId = "org.mockito",
+                    artifactId = "mockito-core",
+                    version = "4.6.1",
+                )
 
             assertThat(dependency1.matches(dependency2)).isTrue()
             assertThat(dependency1.matches(dependency3)).isFalse()
@@ -384,7 +423,7 @@ class MavenFileManagerTest {
                 <version>1.0.0</version>
                 <packaging>jar</packaging>
             </project>
-        """.trimIndent()
+            """.trimIndent()
     }
 
     private fun createPomWithDependencies(): String {
@@ -415,7 +454,7 @@ class MavenFileManagerTest {
                     </dependency>
                 </dependencies>
             </project>
-        """.trimIndent()
+            """.trimIndent()
     }
 
     private fun createPomWithDependencyManagement(): String {
@@ -441,7 +480,7 @@ class MavenFileManagerTest {
                     </dependencies>
                 </dependencyManagement>
             </project>
-        """.trimIndent()
+            """.trimIndent()
     }
 
     private fun createPomWithMultipleDependencyInstances(): String {
@@ -476,6 +515,6 @@ class MavenFileManagerTest {
                     </dependencies>
                 </dependencyManagement>
             </project>
-        """.trimIndent()
+            """.trimIndent()
     }
 }

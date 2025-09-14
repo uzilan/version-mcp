@@ -184,7 +184,7 @@ class ReliabilityService(
 class CircuitBreaker(
     private val failureThreshold: Int,
     private val recoveryTimeMs: Long,
-    private val timeProvider: () -> Long = { System.currentTimeMillis() }
+    private val timeProvider: () -> Long = { System.currentTimeMillis() },
 ) {
     private var failureCount = 0
     private var lastFailureTime = 0L

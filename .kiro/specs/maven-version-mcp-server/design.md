@@ -31,7 +31,7 @@ graph TB
     J --> K
 ```
 
-> **⚠️ Architecture Note**: The current implementation uses HTTP-based communication with the Playwright MCP server, which is inconsistent with the standard MCP architecture. Task 6.5 addresses refactoring this to use proper stdio-based MCP protocol communication via subprocess management, which is how MCP servers are designed to work in production.
+> **✅ Architecture Note**: The implementation now uses proper stdio-based MCP protocol communication with subprocess management for the Playwright MCP server, which is the standard way MCP servers communicate in production. This was completed in task 6.5.
 
 ### Technology Stack
 
@@ -50,14 +50,12 @@ The Maven Version MCP Server operates in a dual role:
 1. **As an MCP Server**: Receives requests from Kiro via stdio-based MCP protocol
 2. **As an MCP Client**: Communicates with Playwright MCP server for web automation
 
-**Current Implementation (Temporary)**:
-- Uses HTTP-based communication with Playwright MCP server
-- Assumes server running on localhost:3000
-
-**Target Architecture (Task 6.5)**:
+**Current Implementation**:
 - Stdio-based MCP protocol communication
 - Subprocess management for Playwright MCP server
 - Proper MCP handshake and capability negotiation
+- Process lifecycle management (start, stop, restart on failure)
+- Health checks and automatic recovery
 
 ```mermaid
 graph TB

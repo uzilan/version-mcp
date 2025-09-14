@@ -103,16 +103,17 @@ class ReliabilityServiceTest {
                 val service = ReliabilityService(maxRetries = 3, baseDelayMs = 100, rateLimitDelayMs = 0)
                 var attempts = 0
 
-                val result = service.executeWithRetry(
-                    operation = "test operation",
-                    retryableExceptions = setOf(RuntimeException::class.java),
-                ) {
-                    attempts++
-                    if (attempts < 3) {
-                        throw RuntimeException("Temporary failure")
+                val result =
+                    service.executeWithRetry(
+                        operation = "test operation",
+                        retryableExceptions = setOf(RuntimeException::class.java),
+                    ) {
+                        attempts++
+                        if (attempts < 3) {
+                            throw RuntimeException("Temporary failure")
+                        }
+                        "success"
                     }
-                    "success"
-                }
 
                 // Verify the retry logic worked correctly
                 assertThat(result.isSuccess).isTrue()

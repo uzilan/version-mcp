@@ -2,7 +2,6 @@ package com.mavenversion.mcp.client
 
 import com.mavenversion.mcp.reliability.PlaywrightMCPException
 import io.mockk.clearAllMocks
-import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -19,19 +18,21 @@ class PlaywrightMCPClientTest {
     @BeforeEach
     fun setUp() {
         processManager = MCPProcessManager()
-        val config = MCPServerConfig(
-            name = "test-playwright",
-            command = listOf("echo", "test"), // Invalid MCP server for testing
-            autoRestart = false
-        )
+        val config =
+            MCPServerConfig(
+                name = "test-playwright",
+                command = listOf("echo", "test"), // Invalid MCP server for testing
+                autoRestart = false,
+            )
         playwrightClient = PlaywrightMCPClient(config, processManager)
     }
 
     @AfterEach
-    fun tearDown() = runTest {
-        processManager.stopAll()
-        clearAllMocks()
-    }
+    fun tearDown() =
+        runTest {
+            processManager.stopAll()
+            clearAllMocks()
+        }
 
     @Nested
     @DisplayName("Connection Tests")
@@ -183,8 +184,9 @@ class PlaywrightMCPClientTest {
 
         @Test
         @DisplayName("Should report connection status")
-        fun shouldReportConnectionStatus() = runTest {
-            assertThat(playwrightClient.isConnected()).isFalse()
-        }
+        fun shouldReportConnectionStatus() =
+            runTest {
+                assertThat(playwrightClient.isConnected()).isFalse()
+            }
     }
 }

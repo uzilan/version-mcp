@@ -45,7 +45,7 @@ class MavenRepositoryClient(
             ) {
                 log.debug { "Navigating to mvnrepository.com homepage" }
                 val content = playwrightClient.navigateToUrl(baseUrl).getOrThrow()
-                
+
                 content
             }.getOrThrow()
         }
@@ -90,7 +90,6 @@ class MavenRepositoryClient(
                 try {
                     playwrightClient.waitForElement("input[name='q']", 5000).getOrThrow()
                 } catch (e: PlaywrightMCPException) {
-                    
                     // Try waiting for search input again
                     try {
                         playwrightClient.waitForElement("input[name='q']", 3000).getOrThrow()

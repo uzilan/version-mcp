@@ -1,6 +1,5 @@
 package com.mavenversion.mcp.reliability
 
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
@@ -68,11 +67,12 @@ class CircuitBreakerTest {
         fun shouldTransitionToHalfOpenAfterRecoveryTime() =
             runTest {
                 var currentTime = 0L
-                val circuitBreaker = CircuitBreaker(
-                    failureThreshold = 1, 
-                    recoveryTimeMs = 100,
-                    timeProvider = { currentTime }
-                )
+                val circuitBreaker =
+                    CircuitBreaker(
+                        failureThreshold = 1,
+                        recoveryTimeMs = 100,
+                        timeProvider = { currentTime },
+                    )
 
                 // Cause failure to open circuit
                 circuitBreaker.execute {
@@ -104,11 +104,12 @@ class CircuitBreakerTest {
         fun shouldCloseCircuitOnSuccessInHalfOpenState() =
             runTest {
                 var currentTime = 0L
-                val circuitBreaker = CircuitBreaker(
-                    failureThreshold = 1, 
-                    recoveryTimeMs = 100,
-                    timeProvider = { currentTime }
-                )
+                val circuitBreaker =
+                    CircuitBreaker(
+                        failureThreshold = 1,
+                        recoveryTimeMs = 100,
+                        timeProvider = { currentTime },
+                    )
 
                 // Open circuit
                 circuitBreaker.execute { throw RuntimeException("Failure") }
@@ -130,11 +131,12 @@ class CircuitBreakerTest {
         fun shouldReopenCircuitOnFailureInHalfOpenState() =
             runTest {
                 var currentTime = 0L
-                val circuitBreaker = CircuitBreaker(
-                    failureThreshold = 1, 
-                    recoveryTimeMs = 100,
-                    timeProvider = { currentTime }
-                )
+                val circuitBreaker =
+                    CircuitBreaker(
+                        failureThreshold = 1,
+                        recoveryTimeMs = 100,
+                        timeProvider = { currentTime },
+                    )
 
                 // Open circuit
                 circuitBreaker.execute { throw RuntimeException("Initial failure") }
@@ -188,11 +190,12 @@ class CircuitBreakerTest {
         fun shouldRespectCustomRecoveryTime() =
             runTest {
                 var currentTime = 0L
-                val circuitBreaker = CircuitBreaker(
-                    failureThreshold = 1, 
-                    recoveryTimeMs = 200,
-                    timeProvider = { currentTime }
-                )
+                val circuitBreaker =
+                    CircuitBreaker(
+                        failureThreshold = 1,
+                        recoveryTimeMs = 200,
+                        timeProvider = { currentTime },
+                    )
 
                 // Open circuit
                 circuitBreaker.execute { throw RuntimeException("Failure") }

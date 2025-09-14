@@ -148,10 +148,14 @@ class VersionParser {
         // Try different selectors for finding the latest version
         val selectors =
             listOf(
-                "table.grid tbody tr:first-child", // First row in version table
-                ".vbtn:first-child", // First version button
-                ".version-item:first-child", // First version item
-                "a[href*='/artifact/']:first-child", // First artifact link
+                // First row in version table
+                "table.grid tbody tr:first-child",
+                // First version button
+                ".vbtn:first-child",
+                // First version item
+                ".version-item:first-child",
+                // First artifact link
+                "a[href*='/artifact/']:first-child",
             )
 
         for (selector in selectors) {
@@ -241,7 +245,8 @@ class VersionParser {
         // Look for date in various formats
         val dateSelectors =
             listOf(
-                "td:nth-child(2)", // Second column in table
+                // Second column in table
+                "td:nth-child(2)",
                 ".date",
                 ".release-date",
                 "time",
@@ -262,10 +267,14 @@ class VersionParser {
         val text = element.text()
         val datePatterns =
             listOf(
-                Regex("(\\d{4}-\\d{2}-\\d{2})"), // YYYY-MM-DD
-                Regex("(\\d{2}/\\d{2}/\\d{4})"), // MM/DD/YYYY
-                Regex("(\\d{2}-\\d{2}-\\d{4})"), // MM-DD-YYYY
-                Regex("(\\w{3} \\d{1,2}, \\d{4})"), // Jan 1, 2023
+                // YYYY-MM-DD
+                Regex("(\\d{4}-\\d{2}-\\d{2})"),
+                // MM/DD/YYYY
+                Regex("(\\d{2}/\\d{2}/\\d{4})"),
+                // MM-DD-YYYY
+                Regex("(\\d{2}-\\d{2}-\\d{4})"),
+                // Jan 1, 2023
+                Regex("(\\w{3} \\d{1,2}, \\d{4})"),
             )
 
         for (pattern in datePatterns) {
@@ -287,7 +296,8 @@ class VersionParser {
     private fun extractDownloads(element: Element): Long? {
         val downloadSelectors =
             listOf(
-                "td:nth-child(3)", // Third column in table
+                // Third column in table
+                "td:nth-child(3)",
                 ".downloads",
                 ".usage-count",
             )

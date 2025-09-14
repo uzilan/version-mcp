@@ -26,206 +26,234 @@ private val log = KotlinLogging.logger {}
  */
 class StdioMCPClient(
     private val command: List<String>,
-    private val workingDirectory: String? = null
+    private val workingDirectory: String? = null,
 ) {
-    private val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-    }
-    
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+        }
+
     private val connectionMutex = Mutex()
     private val requestIdCounter = AtomicLong(1)
-    
+
     private var process: Process? = null
     private var writer: BufferedWriter? = null
     private var reader: BufferedReader? = null
     private var isConnected = false
-    
+
     /**
      * Start the MCP server process and establish connection
      */
-    suspend fun connect(): Result<Unit> = runCatching {
-        connectionMutex.withLock {
-            if (isConnected) {
-                log.debug { "Already connected to MCP server" }
-                return@withLock
+    suspend fun connect(): Result<Unit> =
+        runCatching {
+            connectionMutex.withLock {
+                if (isConnected) {
+                    log.debug { "Already connected to MCP server" }
+                    return@withLock
+                }
+
+                log.info { "Starting MCP server process: ${command.joinToString(" ")}" }
+
+                val processBuilder = ProcessBuilder(command)
+                workingDirectory?.let { processBuilder.directory(java.io.File(it)) }
+
+                // Redirect stderr to inherit so we can see server logs
+                processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT)
+
+                process = processBuilder.start()
+
+                writer = BufferedWriter(OutputStreamWriter(process!!.outputStream))
+                reader = BufferedReader(InputStreamReader(process!!.inputStream))
+
+                // Perform MCP handshake
+                performHandshake()
+
+                isConnected = true
+                log.info { "Successfully connected to MCP server" }
             }
-            
-            log.info { "Starting MCP server process: ${command.joinToString(" ")}" }
-            
-            val processBuilder = ProcessBuilder(command)
-            workingDirectory?.let { processBuilder.directory(java.io.File(it)) }
-            
-            // Redirect stderr to inherit so we can see server logs
-            processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT)
-            
-            process = processBuilder.start()
-            
-            writer = BufferedWriter(OutputStreamWriter(process!!.outputStream))
-            reader = BufferedReader(InputStreamReader(process!!.inputStream))
-            
-            // Perform MCP handshake
-            performHandshake()
-            
-            isConnected = true
-            log.info { "Successfully connected to MCP server" }
+        }.onFailure { error ->
+            log.error(error) { "Failed to connect to MCP server" }
+            cleanup()
         }
-    }.onFailure { error ->
-        log.error(error) { "Failed to connect to MCP server" }
-        cleanup()
-    }
-    
+
     /**
      * Perform MCP protocol handshake
      */
     private suspend fun performHandshake() {
         log.debug { "Performing MCP handshake" }
-        
+
         // Send initialize request
-        val initializeRequest = buildJsonObject {
-            put("jsonrpc", JsonPrimitive("2.0"))
-            put("id", JsonPrimitive(requestIdCounter.getAndIncrement()))
-            put("method", JsonPrimitive("initialize"))
-            put("params", buildJsonObject {
-                put("protocolVersion", JsonPrimitive("2024-11-05"))
-                put("capabilities", buildJsonObject {
-                    put("tools", buildJsonObject {})
-                })
-                put("clientInfo", buildJsonObject {
-                    put("name", JsonPrimitive("maven-version-mcp-server"))
-                    put("version", JsonPrimitive("1.0.0"))
-                })
-            })
-        }
-        
+        val initializeRequest =
+            buildJsonObject {
+                put("jsonrpc", JsonPrimitive("2.0"))
+                put("id", JsonPrimitive(requestIdCounter.getAndIncrement()))
+                put("method", JsonPrimitive("initialize"))
+                put(
+                    "params",
+                    buildJsonObject {
+                        put("protocolVersion", JsonPrimitive("2024-11-05"))
+                        put(
+                            "capabilities",
+                            buildJsonObject {
+                                put("tools", buildJsonObject {})
+                            },
+                        )
+                        put(
+                            "clientInfo",
+                            buildJsonObject {
+                                put("name", JsonPrimitive("maven-version-mcp-server"))
+                                put("version", JsonPrimitive("1.0.0"))
+                            },
+                        )
+                    },
+                )
+            }
+
         sendMessage(initializeRequest)
         val response = receiveMessage()
-        
+
         log.debug { "Initialize response: $response" }
-        
+
         // Send initialized notification
-        val initializedNotification = buildJsonObject {
-            put("jsonrpc", JsonPrimitive("2.0"))
-            put("method", JsonPrimitive("notifications/initialized"))
-        }
-        
+        val initializedNotification =
+            buildJsonObject {
+                put("jsonrpc", JsonPrimitive("2.0"))
+                put("method", JsonPrimitive("notifications/initialized"))
+            }
+
         sendMessage(initializedNotification)
         log.debug { "MCP handshake completed" }
     }
-    
+
     /**
      * Call a tool on the MCP server
      */
-    suspend fun callTool(request: MCPToolRequest): Result<MCPToolResponse> = runCatching {
-        if (!isConnected) {
-            connect().getOrThrow()
+    suspend fun callTool(request: MCPToolRequest): Result<MCPToolResponse> =
+        runCatching {
+            if (!isConnected) {
+                connect().getOrThrow()
+            }
+
+            log.debug { "Calling MCP tool: ${request.name} with params: ${request.arguments}" }
+
+            val requestId = requestIdCounter.getAndIncrement()
+            val mcpRequest =
+                buildJsonObject {
+                    put("jsonrpc", JsonPrimitive("2.0"))
+                    put("id", JsonPrimitive(requestId))
+                    put("method", JsonPrimitive("tools/call"))
+                    put(
+                        "params",
+                        buildJsonObject {
+                            put("name", JsonPrimitive(request.name))
+                            put("arguments", json.encodeToJsonElement(request.arguments))
+                        },
+                    )
+                }
+
+            sendMessage(mcpRequest)
+            val response = receiveMessage()
+
+            // Parse response
+            val responseObj =
+                response as? JsonObject
+                    ?: throw MCPProtocolException("Invalid response format")
+
+            val error = responseObj["error"]
+            if (error != null) {
+                throw MCPToolException("Tool call failed: $error")
+            }
+
+            val result =
+                responseObj["result"] as? JsonObject
+                    ?: throw MCPProtocolException("Missing result in response")
+
+            val toolResponse = json.decodeFromJsonElement<MCPToolResponse>(result)
+            log.debug { "MCP tool call successful: ${toolResponse.content.size} content items" }
+
+            toolResponse
+        }.onFailure { error ->
+            log.error(error) { "MCP tool call failed for ${request.name}" }
         }
-        
-        log.debug { "Calling MCP tool: ${request.name} with params: ${request.arguments}" }
-        
-        val requestId = requestIdCounter.getAndIncrement()
-        val mcpRequest = buildJsonObject {
-            put("jsonrpc", JsonPrimitive("2.0"))
-            put("id", JsonPrimitive(requestId))
-            put("method", JsonPrimitive("tools/call"))
-            put("params", buildJsonObject {
-                put("name", JsonPrimitive(request.name))
-                put("arguments", json.encodeToJsonElement(request.arguments))
-            })
-        }
-        
-        sendMessage(mcpRequest)
-        val response = receiveMessage()
-        
-        // Parse response
-        val responseObj = response as? JsonObject 
-            ?: throw MCPProtocolException("Invalid response format")
-            
-        val error = responseObj["error"]
-        if (error != null) {
-            throw MCPToolException("Tool call failed: $error")
-        }
-        
-        val result = responseObj["result"] as? JsonObject
-            ?: throw MCPProtocolException("Missing result in response")
-            
-        val toolResponse = json.decodeFromJsonElement<MCPToolResponse>(result)
-        log.debug { "MCP tool call successful: ${toolResponse.content.size} content items" }
-        
-        toolResponse
-    }.onFailure { error ->
-        log.error(error) { "MCP tool call failed for ${request.name}" }
-    }
-    
+
     /**
      * List available tools from the MCP server
      */
-    suspend fun listTools(): Result<List<MCPTool>> = runCatching {
-        if (!isConnected) {
-            connect().getOrThrow()
+    suspend fun listTools(): Result<List<MCPTool>> =
+        runCatching {
+            if (!isConnected) {
+                connect().getOrThrow()
+            }
+
+            log.debug { "Listing available MCP tools" }
+
+            val requestId = requestIdCounter.getAndIncrement()
+            val mcpRequest =
+                buildJsonObject {
+                    put("jsonrpc", JsonPrimitive("2.0"))
+                    put("id", JsonPrimitive(requestId))
+                    put("method", JsonPrimitive("tools/list"))
+                }
+
+            sendMessage(mcpRequest)
+            val response = receiveMessage()
+
+            // Parse response
+            val responseObj =
+                response as? JsonObject
+                    ?: throw MCPProtocolException("Invalid response format")
+
+            val error = responseObj["error"]
+            if (error != null) {
+                throw MCPToolException("List tools failed: $error")
+            }
+
+            val result =
+                responseObj["result"] as? JsonObject
+                    ?: throw MCPProtocolException("Missing result in response")
+
+            val toolsArray =
+                result["tools"]
+                    ?: throw MCPProtocolException("Missing tools in response")
+
+            val tools = json.decodeFromJsonElement<List<MCPTool>>(toolsArray)
+            log.debug { "Retrieved ${tools.size} available tools" }
+
+            tools
+        }.onFailure { error ->
+            log.error(error) { "Failed to list MCP tools" }
         }
-        
-        log.debug { "Listing available MCP tools" }
-        
-        val requestId = requestIdCounter.getAndIncrement()
-        val mcpRequest = buildJsonObject {
-            put("jsonrpc", JsonPrimitive("2.0"))
-            put("id", JsonPrimitive(requestId))
-            put("method", JsonPrimitive("tools/list"))
-        }
-        
-        sendMessage(mcpRequest)
-        val response = receiveMessage()
-        
-        // Parse response
-        val responseObj = response as? JsonObject 
-            ?: throw MCPProtocolException("Invalid response format")
-            
-        val error = responseObj["error"]
-        if (error != null) {
-            throw MCPToolException("List tools failed: $error")
-        }
-        
-        val result = responseObj["result"] as? JsonObject
-            ?: throw MCPProtocolException("Missing result in response")
-            
-        val toolsArray = result["tools"] 
-            ?: throw MCPProtocolException("Missing tools in response")
-            
-        val tools = json.decodeFromJsonElement<List<MCPTool>>(toolsArray)
-        log.debug { "Retrieved ${tools.size} available tools" }
-        
-        tools
-    }.onFailure { error ->
-        log.error(error) { "Failed to list MCP tools" }
-    }
-    
+
     /**
      * Send a JSON-RPC message to the server
      */
-    private suspend fun sendMessage(message: JsonObject) = withContext(Dispatchers.IO) {
-        val messageStr = json.encodeToString(JsonObject.serializer(), message)
-        log.trace { "Sending MCP message: $messageStr" }
-        
-        writer?.let { w ->
-            w.write(messageStr)
-            w.newLine()
-            w.flush()
-        } ?: throw MCPProtocolException("Writer not available")
-    }
-    
+    private suspend fun sendMessage(message: JsonObject) =
+        withContext(Dispatchers.IO) {
+            val messageStr = json.encodeToString(JsonObject.serializer(), message)
+            log.trace { "Sending MCP message: $messageStr" }
+
+            writer?.let { w ->
+                w.write(messageStr)
+                w.newLine()
+                w.flush()
+            } ?: throw MCPProtocolException("Writer not available")
+        }
+
     /**
      * Receive a JSON-RPC message from the server
      */
-    private suspend fun receiveMessage(): JsonElement = withContext(Dispatchers.IO) {
-        val line = reader?.readLine() 
-            ?: throw MCPProtocolException("Reader not available or connection closed")
-            
-        log.trace { "Received MCP message: $line" }
-        
-        json.parseToJsonElement(line)
-    }
-    
+    private suspend fun receiveMessage(): JsonElement =
+        withContext(Dispatchers.IO) {
+            val line =
+                reader?.readLine()
+                    ?: throw MCPProtocolException("Reader not available or connection closed")
+
+            log.trace { "Received MCP message: $line" }
+
+            json.parseToJsonElement(line)
+        }
+
     /**
      * Disconnect from the MCP server
      */
@@ -238,7 +266,7 @@ class StdioMCPClient(
             }
         }
     }
-    
+
     /**
      * Clean up resources
      */
@@ -250,25 +278,26 @@ class StdioMCPClient(
         } catch (e: Exception) {
             log.warn(e) { "Error during cleanup" }
         }
-        
+
         writer = null
         reader = null
         process = null
     }
-    
+
     /**
      * Check if connected to the MCP server
      */
     fun isConnected(): Boolean = isConnected && process?.isAlive == true
-    
+
     /**
      * Restart the connection if it fails
      */
-    suspend fun restart(): Result<Unit> = runCatching {
-        log.info { "Restarting MCP server connection" }
-        disconnect()
-        connect().getOrThrow()
-    }
+    suspend fun restart(): Result<Unit> =
+        runCatching {
+            log.info { "Restarting MCP server connection" }
+            disconnect()
+            connect().getOrThrow()
+        }
 }
 
 /**

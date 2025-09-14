@@ -14,34 +14,38 @@ data class MCPServerConfig(
     val workingDirectory: String? = null,
     val autoRestart: Boolean = true,
     val maxRestartAttempts: Int = 3,
-    val restartDelayMs: Long = 1000
+    val restartDelayMs: Long = 1000,
 ) {
     /**
      * Get the full command including arguments
      */
     fun getFullCommand(): List<String> = command + args
-    
+
     companion object {
-        /**
-         * Default configuration for Playwright MCP server using uvx
-         */
-        fun playwrightDefault() = MCPServerConfig(
-            name = "playwright",
-            command = listOf("uvx", "playwright-mcp-server"),
-            env = mapOf(
-                "FASTMCP_LOG_LEVEL" to "ERROR"
-            )
-        )
-        
         /**
          * Default configuration for Playwright MCP server using npx
          */
-        fun playwrightNpx() = MCPServerConfig(
-            name = "playwright",
-            command = listOf("npx", "@modelcontextprotocol/server-playwright"),
-            env = mapOf(
-                "NODE_ENV" to "production"
+        fun playwrightDefault() =
+            MCPServerConfig(
+                name = "playwright",
+                command = listOf("npx", "@playwright/mcp"),
+                env =
+                    mapOf(
+                        "NODE_ENV" to "production",
+                    ),
             )
-        )
+
+        /**
+         * Default configuration for Playwright MCP server using npx
+         */
+        fun playwrightNpx() =
+            MCPServerConfig(
+                name = "playwright",
+                command = listOf("npx", "@playwright/mcp"),
+                env =
+                    mapOf(
+                        "NODE_ENV" to "production",
+                    ),
+            )
     }
 }

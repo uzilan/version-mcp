@@ -12,25 +12,23 @@ The Maven Version MCP Server now uses stdio-based communication with MCP servers
 
 The system provides two default configurations for the Playwright MCP server:
 
-#### Using uvx (Recommended)
+#### Using npx (Default)
 ```kotlin
 val config = MCPServerConfig.playwrightDefault()
 // Equivalent to:
 val config = MCPServerConfig(
     name = "playwright",
-    command = listOf("uvx", "playwright-mcp-server"),
-    env = mapOf("FASTMCP_LOG_LEVEL" to "ERROR")
+    command = listOf("npx", "@playwright/mcp"),
+    env = mapOf("NODE_ENV" to "production")
 )
 ```
 
-#### Using npx
+#### Alternative: Using uvx
 ```kotlin
-val config = MCPServerConfig.playwrightNpx()
-// Equivalent to:
 val config = MCPServerConfig(
     name = "playwright",
-    command = listOf("npx", "@modelcontextprotocol/server-playwright"),
-    env = mapOf("NODE_ENV" to "production")
+    command = listOf("uvx", "playwright-mcp-server"),
+    env = mapOf("FASTMCP_LOG_LEVEL" to "ERROR")
 )
 ```
 
@@ -147,13 +145,13 @@ val customClient = processManager.getClient(customConfig).getOrThrow()
 
 ### For Playwright MCP Server
 
-#### Option 1: Using uvx (Recommended)
-1. Install uv: https://docs.astral.sh/uv/getting-started/installation/
-2. uvx will automatically download and run the Playwright MCP server
-
-#### Option 2: Using npx
+#### Option 1: Using npx (Default)
 1. Install Node.js and npm
 2. The server will be downloaded automatically when first used
+
+#### Option 2: Using uvx
+1. Install uv: https://docs.astral.sh/uv/getting-started/installation/
+2. uvx will automatically download and run the Playwright MCP server
 
 ### Verification
 
@@ -183,7 +181,7 @@ val playwrightClient = PlaywrightMCPClient("http://localhost:3000")
 
 ### After (stdio-based)
 ```kotlin
-val config = MCPServerConfig.playwrightDefault()
+val config = MCPServerConfig.playwrightDefault() // Uses npx @playwright/mcp
 val processManager = MCPProcessManager()
 val playwrightClient = PlaywrightMCPClient(config, processManager)
 ```
@@ -198,10 +196,23 @@ The API remains the same, but you need to:
 
 ### Common Issues
 
-1. **"Command not found" errors**: Make sure uvx/uv or npx/npm is installed
+1. **"Command not found" errors**: Make sure npx/npm is installed (or uvx/uv if using alternative configuration)
 2. **Permission errors**: Check that the MCP server executable has proper permissions
 3. **Port conflicts**: The stdio-based approach doesn't use ports, so this shouldn't be an issue
 4. **Process hanging**: Check the server logs and ensure proper cleanup in finally blocks
+5. **Wait functionality**: Currently simplified - the MCP server's `browser_wait_for` expects text content, not CSS selectors
+
+## Current Status
+
+✅ **Successfully Implemented**: The stdio-based MCP client architecture is fully functional with the `@playwright/mcp` package:
+
+- **Connection**: ✅ Successfully connects to Playwright MCP server via npx
+- **Navigation**: ✅ `browser_navigate` works perfectly for web page navigation  
+- **Content Retrieval**: ✅ `browser_evaluate` works for getting page content and element text
+- **Typing**: ✅ `browser_type` works for filling form fields
+- **Clicking**: ✅ `browser_click` works for element interaction
+
+**Note**: The `waitForElement` functionality is currently simplified since the `browser_wait_for` tool expects text content rather than CSS selectors. Navigation and content retrieval are the core functionalities and work perfectly.
 
 ### Debugging
 

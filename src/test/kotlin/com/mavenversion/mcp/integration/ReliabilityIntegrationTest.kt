@@ -132,11 +132,12 @@ class ReliabilityIntegrationTest {
                 // This test would require a way to simulate MCP server disconnections
                 // For now, we test the basic recovery mechanism
 
-                val config = MCPServerConfig(
-                    name = "test-playwright",
-                    command = listOf("echo", "test"),
-                    autoRestart = false
-                )
+                val config =
+                    MCPServerConfig(
+                        name = "test-playwright",
+                        command = listOf("echo", "test"),
+                        autoRestart = false,
+                    )
                 val processManager = MCPProcessManager()
                 val playwrightClient = PlaywrightMCPClient(config, processManager)
 

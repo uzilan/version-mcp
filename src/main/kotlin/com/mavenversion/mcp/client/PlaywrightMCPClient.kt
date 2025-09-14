@@ -12,7 +12,7 @@ private val log = KotlinLogging.logger {}
  */
 class PlaywrightMCPClient(
     private val config: MCPServerConfig = MCPServerConfig.playwrightDefault(),
-    private val processManager: MCPProcessManager = MCPProcessManager()
+    private val processManager: MCPProcessManager = MCPProcessManager(),
 ) {
     private suspend fun getClient(): StdioMCPClient {
         return processManager.getClient(config).getOrThrow()
@@ -21,10 +21,11 @@ class PlaywrightMCPClient(
     /**
      * Connect to the Playwright MCP server
      */
-    suspend fun connect(): Result<Unit> = runCatching {
-        getClient()
-        Unit
-    }
+    suspend fun connect(): Result<Unit> =
+        runCatching {
+            getClient()
+            Unit
+        }
 
     /**
      * Navigate to a URL using Playwright
@@ -206,15 +207,14 @@ class PlaywrightMCPClient(
         processManager.stopServer(config.name)
     }
 
-
-
     /**
      * Check if connected to the MCP server
      */
-    suspend fun isConnected(): Boolean = runCatching {
-        processManager.healthCheck(config.name).getOrElse { false }
-    }.getOrElse { false }
-    
+    suspend fun isConnected(): Boolean =
+        runCatching {
+            processManager.healthCheck(config.name).getOrElse { false }
+        }.getOrElse { false }
+
     /**
      * Restart the Playwright MCP server connection
      */

@@ -13,7 +13,6 @@ import kotlin.io.path.writeText
 
 @DisplayName("ProjectFileDetector Tests")
 class ProjectFileDetectorTest {
-
     private lateinit var detector: ProjectFileDetector
 
     @BeforeEach
@@ -24,13 +23,15 @@ class ProjectFileDetectorTest {
     @Nested
     @DisplayName("Maven Project Detection")
     inner class MavenProjectDetectionTests {
-
         @Test
         @DisplayName("Should detect Maven project with pom.xml")
-        fun shouldDetectMavenProjectWithPomXml(@TempDir tempDir: Path) {
+        fun shouldDetectMavenProjectWithPomXml(
+            @TempDir tempDir: Path,
+        ) {
             // Create a pom.xml file
             val pomFile = tempDir.resolve("pom.xml").createFile()
-            pomFile.writeText("""
+            pomFile.writeText(
+                """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <project xmlns="http://maven.apache.org/POM/4.0.0">
                     <modelVersion>4.0.0</modelVersion>
@@ -38,7 +39,8 @@ class ProjectFileDetectorTest {
                     <artifactId>test-project</artifactId>
                     <version>1.0.0</version>
                 </project>
-            """.trimIndent())
+                """.trimIndent(),
+            )
 
             val result = detector.detectProject(tempDir.toString())
 
@@ -53,14 +55,16 @@ class ProjectFileDetectorTest {
 
         @Test
         @DisplayName("Should detect multi-module Maven project")
-        fun shouldDetectMultiModuleMavenProject(@TempDir tempDir: Path) {
+        fun shouldDetectMultiModuleMavenProject(
+            @TempDir tempDir: Path,
+        ) {
             // Create root pom.xml
             tempDir.resolve("pom.xml").createFile().writeText("<project></project>")
-            
+
             // Create module directories with pom.xml files
             val module1Dir = Files.createDirectory(tempDir.resolve("module1"))
             module1Dir.resolve("pom.xml").createFile().writeText("<project></project>")
-            
+
             val module2Dir = Files.createDirectory(tempDir.resolve("module2"))
             module2Dir.resolve("pom.xml").createFile().writeText("<project></project>")
 
@@ -70,7 +74,7 @@ class ProjectFileDetectorTest {
             val projectInfo = result.getOrThrow()
             assertThat(projectInfo.type).isEqualTo(ProjectFileDetector.ProjectType.MAVEN)
             assertThat(projectInfo.buildFiles).hasSize(3) // Root + 2 modules
-            
+
             val pomFiles = detector.getBuildFilesByType(projectInfo, ProjectFileDetector.BuildFileType.MAVEN_POM)
             assertThat(pomFiles).hasSize(3)
         }
@@ -79,12 +83,14 @@ class ProjectFileDetectorTest {
     @Nested
     @DisplayName("Gradle Project Detection")
     inner class GradleProjectDetectionTests {
-
         @Test
         @DisplayName("Should detect Gradle project with build.gradle")
-        fun shouldDetectGradleProjectWithBuildGradle(@TempDir tempDir: Path) {
+        fun shouldDetectGradleProjectWithBuildGradle(
+            @TempDir tempDir: Path,
+        ) {
             val buildFile = tempDir.resolve("build.gradle").createFile()
-            buildFile.writeText("""
+            buildFile.writeText(
+                """
                 plugins {
                     id 'java'
                 }
@@ -92,7 +98,8 @@ class ProjectFileDetectorTest {
                 dependencies {
                     implementation 'junit:junit:4.13.2'
                 }
-            """.trimIndent())
+                """.trimIndent(),
+            )
 
             val result = detector.detectProject(tempDir.toString())
 
@@ -105,9 +112,12 @@ class ProjectFileDetectorTest {
 
         @Test
         @DisplayName("Should detect Gradle project with build.gradle.kts")
-        fun shouldDetectGradleProjectWithBuildGradleKts(@TempDir tempDir: Path) {
+        fun shouldDetectGradleProjectWithBuildGradleKts(
+            @TempDir tempDir: Path,
+        ) {
             val buildFile = tempDir.resolve("build.gradle.kts").createFile()
-            buildFile.writeText("""
+            buildFile.writeText(
+                """
                 plugins {
                     kotlin("jvm") version "1.9.0"
                 }
@@ -115,7 +125,8 @@ class ProjectFileDetectorTest {
                 dependencies {
                     implementation("junit:junit:4.13.2")
                 }
-            """.trimIndent())
+                """.trimIndent(),
+            )
 
             val result = detector.detectProject(tempDir.toString())
 
@@ -128,7 +139,9 @@ class ProjectFileDetectorTest {
 
         @Test
         @DisplayName("Should prefer Kotlin DSL over Groovy when both exist")
-        fun shouldPreferKotlinDslOverGroovy(@TempDir tempDir: Path) {
+        fun shouldPreferKotlinDslOverGroovy(
+            @TempDir tempDir: Path,
+        ) {
             tempDir.resolve("build.gradle").createFile().writeText("// Groovy build")
             tempDir.resolve("build.gradle.kts").createFile().writeText("// Kotlin build")
 
@@ -138,7 +151,7 @@ class ProjectFileDetectorTest {
             val projectInfo = result.getOrThrow()
             assertThat(projectInfo.type).isEqualTo(ProjectFileDetector.ProjectType.GRADLE)
             assertThat(projectInfo.buildFiles).hasSize(2)
-            
+
             val primaryBuildFile = detector.findPrimaryBuildFile(projectInfo)
             assertThat(primaryBuildFile).isNotNull()
             assertThat(primaryBuildFile!!.type).isEqualTo(ProjectFileDetector.BuildFileType.GRADLE_KOTLIN)
@@ -148,10 +161,11 @@ class ProjectFileDetectorTest {
     @Nested
     @DisplayName("Mixed Project Detection")
     inner class MixedProjectDetectionTests {
-
         @Test
         @DisplayName("Should detect mixed Maven/Gradle project")
-        fun shouldDetectMixedMavenGradleProject(@TempDir tempDir: Path) {
+        fun shouldDetectMixedMavenGradleProject(
+            @TempDir tempDir: Path,
+        ) {
             tempDir.resolve("pom.xml").createFile().writeText("<project></project>")
             tempDir.resolve("build.gradle").createFile().writeText("// Gradle build")
 
@@ -161,7 +175,7 @@ class ProjectFileDetectorTest {
             val projectInfo = result.getOrThrow()
             assertThat(projectInfo.type).isEqualTo(ProjectFileDetector.ProjectType.MIXED)
             assertThat(projectInfo.buildFiles).hasSize(2)
-            
+
             // Should prefer Maven for mixed projects
             val primaryBuildFile = detector.findPrimaryBuildFile(projectInfo)
             assertThat(primaryBuildFile).isNotNull()
@@ -172,10 +186,11 @@ class ProjectFileDetectorTest {
     @Nested
     @DisplayName("Unknown Project Detection")
     inner class UnknownProjectDetectionTests {
-
         @Test
         @DisplayName("Should detect unknown project when no build files exist")
-        fun shouldDetectUnknownProjectWhenNoBuildFiles(@TempDir tempDir: Path) {
+        fun shouldDetectUnknownProjectWhenNoBuildFiles(
+            @TempDir tempDir: Path,
+        ) {
             // Create some non-build files
             tempDir.resolve("README.md").createFile().writeText("# Test Project")
             tempDir.resolve("src").let { Files.createDirectory(it) }
@@ -192,7 +207,6 @@ class ProjectFileDetectorTest {
     @Nested
     @DisplayName("Error Handling")
     inner class ErrorHandlingTests {
-
         @Test
         @DisplayName("Should fail when project path does not exist")
         fun shouldFailWhenProjectPathDoesNotExist() {
@@ -205,7 +219,9 @@ class ProjectFileDetectorTest {
 
         @Test
         @DisplayName("Should fail when project path is not a directory")
-        fun shouldFailWhenProjectPathIsNotDirectory(@TempDir tempDir: Path) {
+        fun shouldFailWhenProjectPathIsNotDirectory(
+            @TempDir tempDir: Path,
+        ) {
             val file = tempDir.resolve("not-a-directory.txt").createFile()
 
             val result = detector.detectProject(file.toString())
@@ -219,10 +235,11 @@ class ProjectFileDetectorTest {
     @Nested
     @DisplayName("Build File Access Validation")
     inner class BuildFileAccessValidationTests {
-
         @Test
         @DisplayName("Should validate accessible build file")
-        fun shouldValidateAccessibleBuildFile(@TempDir tempDir: Path) {
+        fun shouldValidateAccessibleBuildFile(
+            @TempDir tempDir: Path,
+        ) {
             val pomFile = tempDir.resolve("pom.xml").createFile()
             pomFile.writeText("<project></project>")
 
@@ -237,13 +254,14 @@ class ProjectFileDetectorTest {
         @Test
         @DisplayName("Should fail validation for non-existent build file")
         fun shouldFailValidationForNonExistentBuildFile() {
-            val nonExistentFile = ProjectFileDetector.BuildFile(
-                path = Path.of("/nonexistent/pom.xml"),
-                type = ProjectFileDetector.BuildFileType.MAVEN_POM,
-                isReadable = false,
-                isWritable = false,
-                exists = false
-            )
+            val nonExistentFile =
+                ProjectFileDetector.BuildFile(
+                    path = Path.of("/nonexistent/pom.xml"),
+                    type = ProjectFileDetector.BuildFileType.MAVEN_POM,
+                    isReadable = false,
+                    isWritable = false,
+                    exists = false,
+                )
 
             val result = detector.validateBuildFileAccess(nonExistentFile)
 
@@ -256,13 +274,14 @@ class ProjectFileDetectorTest {
     @Nested
     @DisplayName("Primary Build File Selection")
     inner class PrimaryBuildFileSelectionTests {
-
         @Test
         @DisplayName("Should select root pom.xml over subdirectory pom.xml")
-        fun shouldSelectRootPomOverSubdirectoryPom(@TempDir tempDir: Path) {
+        fun shouldSelectRootPomOverSubdirectoryPom(
+            @TempDir tempDir: Path,
+        ) {
             // Create root pom.xml
             tempDir.resolve("pom.xml").createFile().writeText("<project></project>")
-            
+
             // Create subdirectory pom.xml
             val subDir = Files.createDirectory(tempDir.resolve("module"))
             subDir.resolve("pom.xml").createFile().writeText("<project></project>")
@@ -277,7 +296,9 @@ class ProjectFileDetectorTest {
 
         @Test
         @DisplayName("Should return null for unknown project type")
-        fun shouldReturnNullForUnknownProjectType(@TempDir tempDir: Path) {
+        fun shouldReturnNullForUnknownProjectType(
+            @TempDir tempDir: Path,
+        ) {
             val projectInfo = detector.detectProject(tempDir.toString()).getOrThrow()
             val primaryBuildFile = detector.findPrimaryBuildFile(projectInfo)
 
@@ -288,13 +309,14 @@ class ProjectFileDetectorTest {
     @Nested
     @DisplayName("Utility Methods")
     inner class UtilityMethodsTests {
-
         @Test
         @DisplayName("Should detect multiple build files of same type")
-        fun shouldDetectMultipleBuildFilesOfSameType(@TempDir tempDir: Path) {
+        fun shouldDetectMultipleBuildFilesOfSameType(
+            @TempDir tempDir: Path,
+        ) {
             // Create multiple pom.xml files
             tempDir.resolve("pom.xml").createFile().writeText("<project></project>")
-            
+
             val subDir = Files.createDirectory(tempDir.resolve("module"))
             subDir.resolve("pom.xml").createFile().writeText("<project></project>")
 
@@ -306,7 +328,9 @@ class ProjectFileDetectorTest {
 
         @Test
         @DisplayName("Should get build files by type")
-        fun shouldGetBuildFilesByType(@TempDir tempDir: Path) {
+        fun shouldGetBuildFilesByType(
+            @TempDir tempDir: Path,
+        ) {
             tempDir.resolve("pom.xml").createFile().writeText("<project></project>")
             tempDir.resolve("build.gradle").createFile().writeText("// Gradle")
 

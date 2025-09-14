@@ -1,7 +1,6 @@
 package com.mavenversion.mcp.files
 
 import mu.KotlinLogging
-import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -15,7 +14,6 @@ private val log = KotlinLogging.logger {}
  * Detects project type and locates build files for Maven and Gradle projects
  */
 class ProjectFileDetector {
-
     /**
      * Represents the type of project detected
      */
@@ -23,7 +21,7 @@ class ProjectFileDetector {
         MAVEN,
         GRADLE,
         MIXED,
-        UNKNOWN
+        UNKNOWN,
     }
 
     /**
@@ -32,7 +30,7 @@ class ProjectFileDetector {
     data class ProjectInfo(
         val type: ProjectType,
         val rootPath: Path,
-        val buildFiles: List<BuildFile>
+        val buildFiles: List<BuildFile>,
     )
 
     /**
@@ -43,7 +41,7 @@ class ProjectFileDetector {
         val type: BuildFileType,
         val isReadable: Boolean,
         val isWritable: Boolean,
-        val exists: Boolean
+        val exists: Boolean,
     )
 
     /**
@@ -52,7 +50,8 @@ class ProjectFileDetector {
     enum class BuildFileType {
         MAVEN_POM("pom.xml"),
         GRADLE_GROOVY("build.gradle"),
-        GRADLE_KOTLIN("build.gradle.kts");
+        GRADLE_KOTLIN("build.gradle.kts"),
+        ;
 
         constructor(fileName: String) {
             this.fileName = fileName
@@ -64,39 +63,40 @@ class ProjectFileDetector {
     /**
      * Detect project type and build files in the given directory
      */
-    fun detectProject(projectPath: String): Result<ProjectInfo> = runCatching {
-        val path = Paths.get(projectPath).toAbsolutePath().normalize()
-        
-        log.debug { "Detecting project type in: $path" }
-        
-        if (!path.exists()) {
-            throw ProjectDetectionException("Project path does not exist: $path")
-        }
-        
-        if (!Files.isDirectory(path)) {
-            throw ProjectDetectionException("Project path is not a directory: $path")
-        }
+    fun detectProject(projectPath: String): Result<ProjectInfo> =
+        runCatching {
+            val path = Paths.get(projectPath).toAbsolutePath().normalize()
 
-        val buildFiles = detectBuildFiles(path)
-        val projectType = determineProjectType(buildFiles)
+            log.debug { "Detecting project type in: $path" }
 
-        log.info { "Detected project type: $projectType with ${buildFiles.size} build files" }
-        
-        ProjectInfo(
-            type = projectType,
-            rootPath = path,
-            buildFiles = buildFiles
-        )
-    }.onFailure { error ->
-        log.error(error) { "Failed to detect project in: $projectPath" }
-    }
+            if (!path.exists()) {
+                throw ProjectDetectionException("Project path does not exist: $path")
+            }
+
+            if (!Files.isDirectory(path)) {
+                throw ProjectDetectionException("Project path is not a directory: $path")
+            }
+
+            val buildFiles = detectBuildFiles(path)
+            val projectType = determineProjectType(buildFiles)
+
+            log.info { "Detected project type: $projectType with ${buildFiles.size} build files" }
+
+            ProjectInfo(
+                type = projectType,
+                rootPath = path,
+                buildFiles = buildFiles,
+            )
+        }.onFailure { error ->
+            log.error(error) { "Failed to detect project in: $projectPath" }
+        }
 
     /**
      * Detect all build files in the project directory and subdirectories
      */
     private fun detectBuildFiles(projectPath: Path): List<BuildFile> {
         val buildFiles = mutableListOf<BuildFile>()
-        
+
         // Check for build files in the root directory
         BuildFileType.values().forEach { fileType ->
             val filePath = projectPath.resolve(fileType.fileName)
@@ -105,7 +105,7 @@ class ProjectFileDetector {
                 log.debug { "Found ${fileType.fileName} at: $filePath" }
             }
         }
-        
+
         // Check for build files in immediate subdirectories (common in multi-module projects)
         try {
             Files.list(projectPath).use { stream ->
@@ -125,20 +125,23 @@ class ProjectFileDetector {
         } catch (e: Exception) {
             log.warn(e) { "Error scanning subdirectories in: $projectPath" }
         }
-        
+
         return buildFiles
     }
 
     /**
      * Create a BuildFile with accessibility information
      */
-    private fun createBuildFile(filePath: Path, fileType: BuildFileType): BuildFile {
+    private fun createBuildFile(
+        filePath: Path,
+        fileType: BuildFileType,
+    ): BuildFile {
         return BuildFile(
             path = filePath,
             type = fileType,
             isReadable = filePath.isReadable(),
             isWritable = filePath.isWritable(),
-            exists = filePath.exists()
+            exists = filePath.exists(),
         )
     }
 
@@ -147,9 +150,10 @@ class ProjectFileDetector {
      */
     private fun determineProjectType(buildFiles: List<BuildFile>): ProjectType {
         val hasMaven = buildFiles.any { it.type == BuildFileType.MAVEN_POM }
-        val hasGradle = buildFiles.any { 
-            it.type == BuildFileType.GRADLE_GROOVY || it.type == BuildFileType.GRADLE_KOTLIN 
-        }
+        val hasGradle =
+            buildFiles.any {
+                it.type == BuildFileType.GRADLE_GROOVY || it.type == BuildFileType.GRADLE_KOTLIN
+            }
 
         return when {
             hasMaven && hasGradle -> {
@@ -174,9 +178,12 @@ class ProjectFileDetector {
     /**
      * Find the primary build file for a given project type
      */
-    fun findPrimaryBuildFile(projectInfo: ProjectInfo, preferredType: ProjectType? = null): BuildFile? {
+    fun findPrimaryBuildFile(
+        projectInfo: ProjectInfo,
+        preferredType: ProjectType? = null,
+    ): BuildFile? {
         val targetType = preferredType ?: projectInfo.type
-        
+
         return when (targetType) {
             ProjectType.MAVEN -> {
                 // Prefer root pom.xml over subdirectory ones
@@ -188,8 +195,10 @@ class ProjectFileDetector {
                 // Prefer Kotlin DSL over Groovy, and root over subdirectory
                 projectInfo.buildFiles
                     .filter { it.type == BuildFileType.GRADLE_KOTLIN || it.type == BuildFileType.GRADLE_GROOVY }
-                    .sortedWith(compareBy<BuildFile> { it.path.nameCount }
-                        .thenBy { if (it.type == BuildFileType.GRADLE_KOTLIN) 0 else 1 })
+                    .sortedWith(
+                        compareBy<BuildFile> { it.path.nameCount }
+                            .thenBy { if (it.type == BuildFileType.GRADLE_KOTLIN) 0 else 1 },
+                    )
                     .firstOrNull()
             }
             ProjectType.MIXED -> {
@@ -204,34 +213,41 @@ class ProjectFileDetector {
     /**
      * Validate that a build file is accessible for read/write operations
      */
-    fun validateBuildFileAccess(buildFile: BuildFile): Result<Unit> = runCatching {
-        when {
-            !buildFile.exists -> throw ProjectDetectionException(
-                "Build file does not exist: ${buildFile.path}"
-            )
-            !buildFile.isReadable -> throw ProjectDetectionException(
-                "Build file is not readable: ${buildFile.path}"
-            )
-            !buildFile.isWritable -> throw ProjectDetectionException(
-                "Build file is not writable: ${buildFile.path}"
-            )
-            else -> {
-                log.debug { "Build file access validated: ${buildFile.path}" }
+    fun validateBuildFileAccess(buildFile: BuildFile): Result<Unit> =
+        runCatching {
+            when {
+                !buildFile.exists -> throw ProjectDetectionException(
+                    "Build file does not exist: ${buildFile.path}",
+                )
+                !buildFile.isReadable -> throw ProjectDetectionException(
+                    "Build file is not readable: ${buildFile.path}",
+                )
+                !buildFile.isWritable -> throw ProjectDetectionException(
+                    "Build file is not writable: ${buildFile.path}",
+                )
+                else -> {
+                    log.debug { "Build file access validated: ${buildFile.path}" }
+                }
             }
         }
-    }
 
     /**
      * Get all build files of a specific type
      */
-    fun getBuildFilesByType(projectInfo: ProjectInfo, fileType: BuildFileType): List<BuildFile> {
+    fun getBuildFilesByType(
+        projectInfo: ProjectInfo,
+        fileType: BuildFileType,
+    ): List<BuildFile> {
         return projectInfo.buildFiles.filter { it.type == fileType }
     }
 
     /**
      * Check if the project has multiple build files of the same type
      */
-    fun hasMultipleBuildFiles(projectInfo: ProjectInfo, fileType: BuildFileType): Boolean {
+    fun hasMultipleBuildFiles(
+        projectInfo: ProjectInfo,
+        fileType: BuildFileType,
+    ): Boolean {
         return getBuildFilesByType(projectInfo, fileType).size > 1
     }
 }

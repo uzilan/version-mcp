@@ -18,7 +18,7 @@ private val log = KotlinLogging.logger {}
  * 3. Handle errors and cleanup resources
  *
  * To run this example, you need:
- * 1. uvx or npx installed to run the Playwright MCP server
+ * 1. npx/npm installed to run the Playwright MCP server
  * 2. The MCP server should expose playwright tools like:
  *    - playwright_navigate
  *    - playwright_click
@@ -45,7 +45,7 @@ object MCPPlaywrightExample {
 
                 if (initResult.isFailure) {
                     log.error { "Failed to initialize MCP client: ${initResult.exceptionOrNull()?.message}" }
-                    log.info { "Make sure uvx or npx is installed to run the Playwright MCP server" }
+                    log.info { "Make sure npx/npm is installed to run the Playwright MCP server" }
                     return@runBlocking
                 }
 

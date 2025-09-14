@@ -353,14 +353,15 @@ class MavenRepositoryClientTest {
 
         @Test
         @DisplayName("Should report connection status")
-        fun shouldReportConnectionStatus() = runTest {
-            coEvery { mockPlaywrightClient.isConnected() } returns true
+        fun shouldReportConnectionStatus() =
+            runTest {
+                coEvery { mockPlaywrightClient.isConnected() } returns true
 
-            val isConnected = mavenRepositoryClient.isConnected()
+                val isConnected = mavenRepositoryClient.isConnected()
 
-            assertThat(isConnected).isTrue()
-            coVerify { mockPlaywrightClient.isConnected() }
-        }
+                assertThat(isConnected).isTrue()
+                coVerify { mockPlaywrightClient.isConnected() }
+            }
     }
 
     @Nested
